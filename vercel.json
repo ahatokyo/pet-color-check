@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "builds": [
+    { "src": "dog-color-app/api/**/*.js", "use": "@vercel/node" },
+    { "src": "dog-color-app/index.html", "use": "@vercel/static" }
+  ],
+  "routes": [
+    { "src": "/api/(.*)", "dest": "dog-color-app/api/$1" },
+    { "src": "/(.*)", "dest": "dog-color-app/index.html" }
+  ]
+}
