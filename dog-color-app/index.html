@@ -623,4 +623,57 @@ if (dlAcc)  dlAcc.addEventListener('click',  ()=>downloadCanvas(document.getElem
 </script>
 
 </body>
+  <input id="file" type="file" accept="image/*">
+<script>
+const fileEl = document.getElementById('file');
+
+async function uploadAndRemoveBg(file) {
+  // HEIC 対策＆サイズ削減をしたければここで Canvas 変換する（任意）
+  // 例: 長辺 1600px に縮小して JPEG 出力
+  const buf = await file.arrayBuffer();
+  const b64 = btoa(String.fromCharCode(...new Uint8Array(buf)));
+
+  const res = await fetch('/api/remove-bg', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({
+      filename: file.name || 'image.jpg',
+      mime: file.type || 'image/jpeg',
+      data: b64
+    })
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(()=>({}));
+    alert('背景除去に失敗しました: ' + (err.detail || res.status));
+    return;
+  }
+
+  // ClipDrop から返るのは PNG バイナリ
+  const blob = await res.blob();
+  // ここでプレビュー or ダウンロード
+  const url = URL.createObjectURL(blob);
+  // ダウンロード例
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = (file.name.replace(/\.[^.]+$/, '') || 'image') + '_rgba.png';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+fileEl.addEventListener('change', async (e) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+  if (!/^image\/(png|jpeg|jpg|webp)$/i.test(file.type)) {
+    alert('PNG/JPG/WebP の画像を選んでください（HEICは変換が必要）');
+    return;
+  }
+  // 目安: 4MB以下（Vercel本体の制限対策）
+  if (file.size > 4 * 1024 * 1024) {
+    alert('画像が大きすぎます（4MB以下推奨）');
+    return;
+  }
+  await uploadAndRemoveBg(file);
+});
+</script>
 </html>
