@@ -581,7 +581,34 @@ function loadImageFromBlob(blob){
     im.src = url;
   });
 }
+<script>
+// === 合成（単色背景＋中央フィット） ===
+function drawComposite(canvas, bgHex, subjectImg) {
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
 
+  // 背景を塗る
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle = bgHex;
+  ctx.fillRect(0,0,W,H);
+
+  // 画像を中央にフィットさせて描画（余白5%）
+  const pad = 0.05;
+  const maxW = W * (1 - 2*pad);
+  const maxH = H * (1 - 2*pad);
+  const scale = Math.min(maxW / subjectImg.width, maxH / subjectImg.height);
+  const dw = subjectImg.width * scale;
+  const dh = subjectImg.height * scale;
+  const dx = (W - dw) / 2;
+  const dy = (H - dh) / 2;
+
+  // うっすら影（見栄え用）
+  ctx.shadowColor = 'rgba(0,0,0,0.15)';
+  ctx.shadowBlur = Math.round(W * 0.02);
+  ctx.drawImage(subjectImg, dx, dy, dw, dh);
+  ctx.shadowBlur = 0;
+}
+</script>
 // ★ ここがアップロード入口（#upload の change）
 const uploadEl = document.getElementById('upload');
 if (uploadEl) {
