@@ -42,15 +42,13 @@
   .sw .ttl{font-weight:700;font-size:13px}
   .rowsm{display:flex;justify-content:space-between;align-items:center;margin-top:2px}
   .rowsm code{background:#f2f4f7;border-radius:6px;padding:2px 6px}
-  .badge{display:none} /* トーン非表示 */
-
-  /* === Mobile === */
+  .badge{display:none}
   @media (max-width: 640px) {
     .app { grid-template-columns: 1fr; padding: 10px; }
     .coat-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
     .coat .chip { height: 56px; }
     .coat .meta { font-size: 12px; padding: 5px 7px; }
-    .coat .meta small { display:none; } /* HEX隠して1行保持 */
+    .coat .meta small { display:none; }
     .traits { grid-template-columns: 1fr; gap: 10px; }
     .traits-list label { padding: 8px 10px; }
     .traits-list input[type="checkbox"] { transform: scale(1.25); }
@@ -75,7 +73,6 @@
 </header>
 
 <div class="app">
-  <!-- 左：入力 -->
   <section class="card">
     <h2>1) 愛犬の毛色を選択</h2>
     <p class="hint">1色のみ選択してください。(毛が2色の場合はメインの色を選択)</p>
@@ -97,7 +94,6 @@
     <div id="note" class="note">性格は1〜3つまで選択してください。</div>
   </section>
 
-  <!-- 右：結果 -->
   <section class="card">
     <h2>愛犬パーソナルカラー診断結果</h2>
     <p class="hint">
@@ -131,13 +127,13 @@
   </section>
 </div>
 
-<!-- 写真プレビュー -->
 <section class="card" id="photoSection" style="margin:16px auto;max-width:1100px;">
   <h2>愛犬写真の背景除去＆3色プレビュー</h2>
   <p class="hint" style="color:#555; background:#f6f7f8; padding:8px 10px; border-radius:8px;">
     画像をアップロードすると背景を自動で除去し、診断の3色背景でプレビューできます
   </p>
 
+  <!-- ※この input だけ。ほかの upload/file は置かない -->
   <input id="upload" type="file" accept="image/png,image/jpeg,image/webp" />
   <div id="upMsg" class="note" style="margin-top:8px;display:none;"></div>
 
@@ -155,7 +151,7 @@
   </div>
 </section>
 
-<!-- ここからJS -->
+<!-- ========= 診断ロジック（そのまま） ========= -->
 <script>
 /* ====== 70色パレット ====== */
 const PALETTE=[
@@ -230,23 +226,17 @@ const PALETTE=[
   {hex:"#1E1E1E",cat:"グレー",tone:"ダーク",name:"ジェット"},
   {hex:"#000000",cat:"グレー",tone:"ダーク",name:"ブラック"}
 ];
-
-/* ====== 毛色20（色見本付き） ====== */
 const COATS=[
   ["ホワイト","#FFFFFF"],["クリーム","#FFFDD0"],["フォーン","#C3A276"],["タン","#C49A6C"],["セーブル","#7B5B3E"],["アプリコット","#E6A571"],
   ["イエロー","#FFD54F"],["ゴールド","#FFD700"],["レッド","#C04000"],["マホガニー","#722F37"],
   ["マール","#7A92A6"],["ブルー","#5A7FA3"],["シルバー","#A9A9A9"],["ウルフセーブル","#8E8E86"],["グレー","#808080"],
   ["ライトブラウン","#B6864D"],["ブラウン","#8B5A2B"],["ブリンドル","#5A4636"],["ダークチョコレート","#3A2C2A"],["ブラック","#000000"]
 ];
-
-/* ====== 性格リスト ====== */
 const TRAITS={
   intro:["繊細","慎重","警戒心が強い","寂しがり屋","おだやか","マイペース","独立心が強い","頑固"],
   neutral:["賢い","集中力が高い","クール","素直","好奇心旺盛","甘えん坊","順応性が高い"],
   extro:["勇敢","活発","お調子者","リーダー気質","社交的"]
 };
-
-/* ====== 色ユーティリティ ====== */
 const hexToRgb=h=>{const m=h.replace('#','');return{r:parseInt(m.slice(0,2),16),g:parseInt(m.slice(2,4),16),b:parseInt(m.slice(4,6),16)}};
 const rgbToHue=({r,g,b})=>{r/=255;g/=255;b/=255;const mx=Math.max(r,g,b),mn=Math.min(r,g,b),d=mx-mn;if(d===0)return 0;let h=mx===r?(g-b)/d:mx===g?(b-r)/d+2:(r-g)/d+4;return (h*60+360)%360};
 const hueOf=hex=>rgbToHue(hexToRgb(hex));
@@ -255,208 +245,76 @@ function rgbToXyz(r,g,b){r/=255;g/=255;b/=255;r=r>0.04045?((r+0.055)/1.055)**2.4
 function xyzToLab(x,y,z){const xr=x/95.047,yr=y/100,zr=z/108.883;const f=t=>t>0.008856?Math.cbrt(t):(7.787*t+16/116);const fx=f(xr),fy=f(yr),fz=f(zr);return{L:116*fy-16,a:500*(fx-fy),b:200*(fy-fz)}}
 const hexToLab=hex=>{const {r,g,b}=hexToRgb(hex);const {x,y,z}=rgbToXyz(r,g,b);return xyzToLab(x,y,z)};
 function labChroma(hex){const L=hexToLab(hex);return Math.hypot(L.a,L.b);}
-
-/* ====== 性格 → センチメント ====== */
-const traitGroup={}; 
-TRAITS.intro.forEach(t=>traitGroup[t]="内向");
-TRAITS.neutral.forEach(t=>traitGroup[t]="中立");
-TRAITS.extro.forEach(t=>traitGroup[t]="外交");
+const traitGroup={}; TRAITS.intro.forEach(t=>traitGroup[t]="内向"); TRAITS.neutral.forEach(t=>traitGroup[t]="中立"); TRAITS.extro.forEach(t=>traitGroup[t]="外交");
 function sentiment(traits){let s=0,n=0,e=0;traits.forEach(t=>{const g=traitGroup[t];if(g==="内向")s++;else if(g==="外交")e++;else n++;});if(e>=s&&e>=n)return"外交";if(s>=n&&s>=e)return"内向";return"中立"}
 const tonePrefWeight={内向:{ライト:1.0,ミドル:0.7,ダーク:0.3},中立:{ライト:0.7,ミドル:1.0,ダーク:0.7},外交:{ライト:0.4,ミドル:0.9,ダーク:1.0}};
-const TRAIT_HUE_TILT={
-  "繊細":[330,285], "慎重":[30,210], "警戒心が強い":[30,210],
-  "寂しがり屋":[330,270], "おだやか":[90,40], "マイペース":[40,210],
-  "独立心が強い":[270,210], "頑固":[20,0],
-  "賢い":[210,220], "集中力が高い":[210,200], "クール":[210,240],
-  "素直":[120,60], "好奇心旺盛":[60,330], "甘えん坊":[330,300],
-  "順応性が高い":[40,120],
-  "勇敢":[0,30], "活発":[30,60], "お調子者":[60,330],
-  "リーダー気質":[270,0], "社交的":[60,30]
-};
-function hueBiasScore(colorHue, prefHues){
-  if(!prefHues || !prefHues.length) return 0;
-  let best=0; prefHues.forEach(h=>{ const d=hueDist(colorHue,h); best=Math.max(best, Math.exp(-(d*d)/(2*25*25))); });
-  return best;
-}
-
-/* ====== シード乱数 ====== */
+const TRAIT_HUE_TILT={"繊細":[330,285],"慎重":[30,210],"警戒心が強い":[30,210],"寂しがり屋":[330,270],"おだやか":[90,40],"マイペース":[40,210],"独立心が強い":[270,210],"頑固":[20,0],"賢い":[210,220],"集中力が高い":[210,200],"クール":[210,240],"素直":[120,60],"好奇心旺盛":[60,330],"甘えん坊":[330,300],"順応性が高い":[40,120],"勇敢":[0,30],"活発":[30,60],"お調子者":[60,330],"リーダー気質":[270,0],"社交的":[60,30]};
+function hueBiasScore(H, pref){if(!pref||!pref.length)return 0;let best=0;pref.forEach(h=>{const d=hueDist(H,h);best=Math.max(best,Math.exp(-(d*d)/(2*25*25)));});return best;}
 function seedFrom(str){let h=2166136261>>>0;for(let i=0;i<str.length;i++){h^=str.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0}
 function rng(seed){let s=seed>>>0;return ()=>{s=(s*1664525+1013904223)>>>0;return (s&0xffff)/0x10000};}
-
-/* ====== 診断ロジック ====== */
 function pickColors(coatName, traits){
-  const coatHex = (new Map(COATS)).get(coatName) || "#FFFFFF";
-  const coatHue = hueOf(coatHex);
-  const senti = sentiment(traits);
-  const r = rng(seedFrom(coatName + "|" + traits.slice().sort().join(",")));
-  const favorGray = ["クール","賢い","集中力が高い"].some(t => traits.includes(t));
-
-  const comp = (coatHue+180)%360;
-  const splits = [(coatHue+150)%360,(coatHue+210)%360];
-  const splitPrimary = splits[Math.floor(r()*splits.length)];
-
-  const scored = PALETTE.map(c=>{
-    const H = hueOf(c.hex), L = hexToLab(c.hex).L, C = labChroma(c.hex);
-    const sAnalog = Math.exp(-(hueDist(H,coatHue)**2)/(2*35*35));
-    const sComp   = Math.exp(-(hueDist(H,comp)**2)/(2*25*25));
-    const sSplit1 = Math.exp(-(hueDist(H,splitPrimary)**2)/(2*22*22));
-    const sSplit2 = Math.exp(-(hueDist(H,(splitPrimary===splits[0]?splits[1]:splits[0]))**2)/(2*25*25));
-    const sSplit  = Math.max(sSplit1,sSplit2);
-
-    let bias=0; traits.forEach(t=>{ bias += hueBiasScore(H, TRAIT_HUE_TILT[t]); });
-    bias /= Math.max(1, traits.length);
-
-    const toneW = (tonePrefWeight[senti][c.tone]||0.6);
-
-    const mainScore = (1.2*sAnalog + 0.6*bias) * (0.8 + 0.4*toneW);
-    const subBase   = (0.9*sAnalog + 0.9*bias) * (0.7 + 0.6*toneW);
-
-    const grayPenalty = Math.max(0, (20 - Math.min(C,20)) / 20);
-    const grayFactor =
-      favorGray ? (1 - 0.25*grayPenalty) :
-      senti==="外交" ? (1 - 0.35*grayPenalty) :
-      senti==="中立" ? (1 - 0.55*grayPenalty) :
-                       (1 - 0.70*grayPenalty);
-
-    const accentBase =
-      (senti==="外交" ? (0.9*sSplit + 1.05*sComp) :
-       senti==="内向" ? (1.1*sSplit + 0.6*sComp) :
-                        (1.0*sSplit + 0.8*sComp))
-      + 0.55*bias;
-
-    const wiggle = 0.96 + 0.08*r();
-
-    return {c, H, L, mainScore, subBase, accentRaw: accentBase*grayFactor*wiggle};
+  const coatHex=(new Map(COATS)).get(coatName)||"#FFFFFF"; const coatHue=hueOf(coatHex);
+  const senti=sentiment(traits); const r=rng(seedFrom(coatName+"|"+traits.slice().sort().join(",")));
+  const favorGray=["クール","賢い","集中力が高い"].some(t=>traits.includes(t));
+  const comp=(coatHue+180)%360; const splits=[(coatHue+150)%360,(coatHue+210)%360]; const splitPrimary=splits[Math.floor(r()*splits.length)];
+  const scored=PALETTE.map(c=>{
+    const H=hueOf(c.hex), L=hexToLab(c.hex).L, C=labChroma(c.hex);
+    const sAnalog=Math.exp(-(hueDist(H,coatHue)**2)/(2*35*35));
+    const sComp=Math.exp(-(hueDist(H,comp)**2)/(2*25*25));
+    const sSplit1=Math.exp(-(hueDist(H,splitPrimary)**2)/(2*22*22));
+    const sSplit2=Math.exp(-(hueDist(H,(splitPrimary===splits[0]?splits[1]:splits[0]))**2)/(2*25*25));
+    const sSplit=Math.max(sSplit1,sSplit2);
+    let bias=0; traits.forEach(t=>{bias+=hueBiasScore(H,TRAIT_HUE_TILT[t])}); bias/=Math.max(1,traits.length);
+    const toneW=(tonePrefWeight[senti][c.tone]||0.6);
+    const mainScore=(1.2*sAnalog+0.6*bias)*(0.8+0.4*toneW);
+    const subBase  =(0.9*sAnalog+0.9*bias)*(0.7+0.6*toneW);
+    const grayPenalty=Math.max(0,(20-Math.min(C,20))/20);
+    const grayFactor=favorGray?(1-0.25*grayPenalty):senti==="外交"?(1-0.35*grayPenalty):senti==="中立"?(1-0.55*grayPenalty):(1-0.70*grayPenalty);
+    const accentBase=(senti==="外交"?(0.9*sSplit+1.05*sComp):senti==="内向"?(1.1*sSplit+0.6*sComp):(1.0*sSplit+0.8*sComp))+0.55*bias;
+    const wiggle=0.96+0.08*r();
+    return {c,H,L,mainScore,subBase,accentRaw:accentBase*grayFactor*wiggle};
   });
-
-  // MAIN
-  const mainList=[...scored].sort((a,b)=>b.mainScore-a.mainScore);
-  const mTop=mainList[0].mainScore, mNear=mainList.filter(x=>x.mainScore>=mTop*0.98);
+  const mainList=[...scored].sort((a,b)=>b.mainScore-a.mainScore); const mTop=mainList[0].mainScore; const mNear=mainList.filter(x=>x.mainScore>=mTop*0.98);
   const main=(mNear[Math.floor(r()*mNear.length)]||mainList[0]).c;
-
-  // SUB
   const mainHue=hueOf(main.hex), mainL=hexToLab(main.hex).L;
   const subList=scored.filter(x=>x.c.hex!==main.hex).map(x=>{
-      const huePenalty = Math.exp(-(hueDist(x.H, mainHue)**2)/(2*20*20));
-      const lightPenalty = Math.exp(-((x.L-mainL)**2)/(2*8*8));
-      const diversityPenalty = 0.35*huePenalty + 0.25*lightPenalty;
-      return {x, score: x.subBase*(1 - diversityPenalty)};
-    }).sort((a,b)=>b.score-a.score);
-  const sTop=subList[0].score, sNear=subList.filter(s=>s.score>=sTop*0.97);
+    const huePenalty=Math.exp(-(hueDist(x.H,mainHue)**2)/(2*20*20));
+    const lightPenalty=Math.exp(-((x.L-mainL)**2)/(2*8*8));
+    const diversity=0.35*huePenalty+0.25*lightPenalty;
+    return {x,score:x.subBase*(1-diversity)};
+  }).sort((a,b)=>b.score-a.score);
+  const sTop=subList[0].score; const sNear=subList.filter(s=>s.score>=sTop*0.97);
   const sub=(sNear[Math.floor(r()*sNear.length)]||subList[0]).x.c;
-
-  // ACCENT
-  const usedCats=new Set([main.cat||main.c?.cat, sub.cat||sub.c?.cat].filter(Boolean));
-  const subHue=hueOf(sub.hex);
-  const accentList=scored
-    .filter(x=>x.c.hex!==main.hex && x.c.hex!==sub.hex)
-    .map(x=>{
-      const nearMain = Math.exp(-(hueDist(x.H, mainHue)**2)/(2*18*18));
-      const nearSub  = Math.exp(-(hueDist(x.H, subHue )**2)/(2*18*18));
-      let score = x.accentRaw * (1 - (0.35*nearMain + 0.25*nearSub));
-      if(usedCats.has(x.c.cat)) score *= 0.82;
-      if(x.c.cat==="青") score *= 0.93;
-      if(x.c.cat==="グレー") score *= 0.85;
-      return {x, score};
-    })
-    .sort((a,b)=>b.score-a.score);
-  const aTop=accentList[0].score, aNear=accentList.filter(s=>s.score>=aTop*0.96);
+  const usedCats=new Set([main.cat||main.c?.cat, sub.cat||sub.c?.cat].filter(Boolean)); const subHue=hueOf(sub.hex);
+  const accentList=scored.filter(x=>x.c.hex!==main.hex&&x.c.hex!==sub.hex).map(x=>{
+    const nearMain=Math.exp(-(hueDist(x.H,mainHue)**2)/(2*18*18));
+    const nearSub =Math.exp(-(hueDist(x.H,subHue )**2)/(2*18*18));
+    let score=x.accentRaw*(1-(0.35*nearMain+0.25*nearSub));
+    if(usedCats.has(x.c.cat)) score*=0.82;
+    if(x.c.cat==="青") score*=0.93;
+    if(x.c.cat==="グレー") score*=0.85;
+    return {x,score};
+  }).sort((a,b)=>b.score-a.score);
+  const aTop=accentList[0].score; const aNear=accentList.filter(s=>s.score>=aTop*0.96);
   const accent=(aNear[Math.floor(r()*aNear.length)]||accentList[0]).x.c;
-
-  return {main, sub, accent};
+  return {main,sub,accent};
 }
-
-/* ====== UI描画 ====== */
-const coatGrid=document.getElementById("coatGrid");
-let selectedCoat=null;
-function renderCoats(){
-  coatGrid.innerHTML="";
-  COATS.forEach(([name,hex])=>{
-    const card=document.createElement("button");
-    card.type="button"; card.className="coat";
-    card.innerHTML=`<div class="chip" style="background:${hex}"></div>
-                    <div class="meta"><span>${name}</span><small>${hex}</small></div>`;
-    card.addEventListener("click",()=>{
-      selectedCoat=name;
-      document.querySelectorAll(".coat").forEach(c=>c.classList.remove("selected"));
-      card.classList.add("selected");
-    });
-    coatGrid.appendChild(card);
-  });
-}
+const coatGrid=document.getElementById("coatGrid"); let selectedCoat=null;
+function renderCoats(){coatGrid.innerHTML=""; COATS.forEach(([name,hex])=>{const card=document.createElement("button");card.type="button";card.className="coat";card.innerHTML=`<div class="chip" style="background:${hex}"></div><div class="meta"><span>${name}</span><small>${hex}</small></div>`;card.addEventListener("click",()=>{selectedCoat=name;document.querySelectorAll(".coat").forEach(c=>c.classList.remove("selected"));card.classList.add("selected");});coatGrid.appendChild(card);});}
 renderCoats();
-
-/* 性格リスト描画＋制限（1〜3つ） */
-function addTraitList(containerId, list){
-  const el=document.getElementById(containerId);
-  list.forEach(t=>{
-    const wrap=document.createElement("label");
-    const cb=document.createElement("input"); cb.type="checkbox"; cb.value=t;
-    cb.addEventListener("change",limitTraits);
-    wrap.appendChild(cb); wrap.appendChild(document.createTextNode(" "+t));
-    el.appendChild(wrap);
-  });
-}
-addTraitList("traits-intro", TRAITS.intro);
-addTraitList("traits-neutral", TRAITS.neutral);
-addTraitList("traits-extro", TRAITS.extro);
-
-function selectedTraits(){ return [...document.querySelectorAll(".traits input[type=checkbox]:checked")].map(i=>i.value); }
-function limitTraits(e){
-  const checks=[...document.querySelectorAll(".traits input[type=checkbox]")];
-  const checked=checks.filter(c=>c.checked);
-  const note=document.getElementById("note");
-  if(checked.length>3){
-    e.target.checked=false;
-    note.style.display="block";
-    setTimeout(()=>note.style.display="none",1400);
-  }
-}
-
-/* 結果描画 */
-function setSw(prefix, color){
-  document.getElementById(prefix+"Chip").style.background=color.hex;
-  document.getElementById(prefix+"Hex").textContent=color.hex;
-  document.getElementById(prefix+"Name").textContent=color.name;
-  document.getElementById(prefix+"Tone").textContent=color.tone;
-}
-
-/* 診断実行：毛色必須・性格1〜3つ必須 */
-function run(){
-  const msg=document.getElementById("msg");
-  const traits=selectedTraits();
-  if(!selectedCoat){ msg.textContent="毛色を1つ選択してください。"; msg.style.display="block"; return; }
-  if(traits.length===0){ msg.textContent="性格は1〜3つまで選択してください。"; msg.style.display="block"; return; }
-  msg.style.display="none";
-  try{
-    const res=pickColors(selectedCoat, traits);
-    setSw("main",res.main); setSw("sub",res.sub); setSw("acc",res.accent);
-  }catch(e){
-    console.error(e);
-    msg.textContent="エラー：内部データに不整合があります。";
-    msg.style.display="block";
-  }
-}
-document.getElementById("run").addEventListener("click", run);
-
-/* リセット */
-document.getElementById("reset").addEventListener("click", ()=>{
-  selectedCoat=null;
-  document.querySelectorAll(".coat").forEach(c=>c.classList.remove("selected"));
-  document.querySelectorAll(".traits input[type=checkbox]").forEach(c=>c.checked=false);
-  ["main","sub","acc"].forEach(k=>{
-    document.getElementById(k+"Chip").style.background="#fff";
-    document.getElementById(k+"Hex").textContent="—";
-    document.getElementById(k+"Name").textContent="—";
-    document.getElementById(k+"Tone").textContent="—";
-  });
-  const msg=document.getElementById("msg"); msg.style.display="none";
-});
+function addTraitList(id,list){const el=document.getElementById(id);list.forEach(t=>{const w=document.createElement("label");const cb=document.createElement("input");cb.type="checkbox";cb.value=t;cb.addEventListener("change",limitTraits);w.appendChild(cb);w.appendChild(document.createTextNode(" "+t));el.appendChild(w);});}
+addTraitList("traits-intro",TRAITS.intro); addTraitList("traits-neutral",TRAITS.neutral); addTraitList("traits-extro",TRAITS.extro);
+function selectedTraits(){return [...document.querySelectorAll(".traits input[type=checkbox]:checked")].map(i=>i.value)}
+function limitTraits(e){const checks=[...document.querySelectorAll(".traits input[type=checkbox]")];const checked=checks.filter(c=>c.checked);const note=document.getElementById("note");if(checked.length>3){e.target.checked=false;note.style.display="block";setTimeout(()=>note.style.display="none",1400);}}
+function setSw(prefix,color){document.getElementById(prefix+"Chip").style.background=color.hex;document.getElementById(prefix+"Hex").textContent=color.hex;document.getElementById(prefix+"Name").textContent=color.name;document.getElementById(prefix+"Tone").textContent=color.tone;}
+function run(){const msg=document.getElementById("msg");const traits=selectedTraits();if(!selectedCoat){msg.textContent="毛色を1つ選択してください。";msg.style.display="block";return;}if(traits.length===0){msg.textContent="性格は1〜3つまで選択してください。";msg.style.display="block";return;}msg.style.display="none";try{const res=pickColors(selectedCoat,traits);setSw("main",res.main);setSw("sub",res.sub);setSw("acc",res.accent);}catch(e){console.error(e);msg.textContent="エラー：内部データに不整合があります。";msg.style.display="block";}}
+document.getElementById("run").addEventListener("click",run);
+document.getElementById("reset").addEventListener("click",()=>{selectedCoat=null;document.querySelectorAll(".coat").forEach(c=>c.classList.remove("selected"));document.querySelectorAll(".traits input[type=checkbox]").forEach(c=>c.checked=false);["main","sub","acc"].forEach(k=>{document.getElementById(k+"Chip").style.background="#fff";document.getElementById(k+"Hex").textContent="—";document.getElementById(k+"Name").textContent="—";document.getElementById(k+"Tone").textContent="—";});document.getElementById("msg").style.display="none";});
 </script>
 
-<!-- 写真モジュール（唯一のアップロード処理） -->
+<!-- ========= 写真モジュール（唯一のアップロード処理） ========= -->
 <script id="dog-photo-module">
-/* ===== 現在の診断HEXを取得 ===== */
+/* 現在の診断HEXを取得 */
 function currentResultHexes(){
   const m=document.getElementById('mainHex')?.textContent.trim();
   const s=document.getElementById('subHex')?.textContent.trim();
@@ -471,32 +329,20 @@ function setUpMsg(text,isErr=false){
   el.textContent=text;
 }
 
-/* ===== 画像→Base64(JSON)でサーバへ ===== */
+/* JSON(base64)でサーバへ投げる */
 async function removeBgByJson(file){
-  // 4MB程度に収める（大きければ縮小）※簡易
   const buf=await file.arrayBuffer();
   const b64=btoa(String.fromCharCode(...new Uint8Array(buf)));
-
   const r=await fetch('/api/remove-bg',{
     method:'POST',
     headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({
-      filename:file.name||'image.jpg',
-      mime:file.type||'image/jpeg',
-      data:b64
-    })
+    body:JSON.stringify({ filename:file.name||'image.jpg', mime:file.type||'image/jpeg', data:b64 })
   });
-  if(!r.ok){
-    let detail='';
-    try{detail=await r.text();}catch{}
-    throw new Error(`HTTP ${r.status}: ${detail?.slice(0,300)}`);
-  }
-  // APIはPNGバイナリを返す
-  const blob=await r.blob();
-  return blob;
+  if(!r.ok){ let detail=''; try{detail=await r.text()}catch{}; throw new Error(`HTTP ${r.status}: ${detail?.slice(0,300)}`); }
+  return await r.blob(); // PNG バイナリ
 }
 
-/* ===== 画像読み込み(Blob→HTMLImageElement) ===== */
+/* Blob -> 画像 */
 function loadImageFromBlob(blob){
   return new Promise((resolve,reject)=>{
     const url=URL.createObjectURL(blob);
@@ -507,7 +353,7 @@ function loadImageFromBlob(blob){
   });
 }
 
-/* ===== 合成（単色背景＋中央フィット） ===== */
+/* 合成（単色背景＋中央フィット） */
 function drawComposite(canvas,bgHex,subjectImg){
   const ctx=canvas.getContext('2d');
   const W=canvas.width,H=canvas.height;
@@ -523,46 +369,24 @@ function drawComposite(canvas,bgHex,subjectImg){
   ctx.drawImage(subjectImg,dx,dy,dw,dh);
   ctx.shadowBlur=0;
 }
-<script id="dog-photo-module">
-  …
-  /* ===== 合成（単色背景＋中央フィット） ===== */
-  function drawComposite(canvas,bgHex,subjectImg){
-    const ctx=canvas.getContext('2d');
-    const W=canvas.width,H=canvas.height;
-    ctx.clearRect(0,0,W,H);
-    ctx.fillStyle=bgHex;
-    ctx.fillRect(0,0,W,H);
-    const pad=.05,maxW=W*(1-2*pad),maxH=H*(1-2*pad);
-    const scale=Math.min(maxW/subjectImg.width,maxH/subjectImg.height);
-    const dw=subjectImg.width*scale,dh=subjectImg.height*scale;
-    const dx=(W-dw)/2,dy=(H-dh)/2;
-    ctx.shadowColor='rgba(0,0,0,.15)';
-    ctx.shadowBlur=Math.round(W*.02);
-    ctx.drawImage(subjectImg,dx,dy,dw,dh);
-    ctx.shadowBlur=0;
-  }
+/* ★ グローバル公開（古い呼び出し対策） */
+if(typeof window!=='undefined'){ window.drawComposite = window.drawComposite || drawComposite; }
 
-  /* ←ココを追加：グローバル公開（古い呼び出し対策） */
-  window.drawComposite = window.drawComposite || drawComposite;
-
-/* ===== ダウンロード（iOS配慮） ===== */
+/* ダウンロード（iOS配慮） */
 function downloadCanvas(canvas, filename){
   const dataUrl=canvas.toDataURL('image/png');
-  const isIOS=/iP(hone|ad|od)/.test(navigator.platform)||
-              (navigator.userAgent.includes('Mac') && 'ontouchend' in document);
+  const isIOS=/iP(hone|ad|od)/.test(navigator.platform)||(navigator.userAgent.includes('Mac')&&'ontouchend'in document);
   if(isIOS){
     const w=window.open(); if(!w) return;
     w.document.write('<html><head><title>長押しで保存</title></head><body style="margin:0">');
     w.document.write(`<img src="${dataUrl}" style="width:100%;height:auto;display:block">`);
-    w.document.write('</body></html>');
-    w.document.close();
+    w.document.write('</body></html>'); w.document.close();
   }else{
-    const a=document.createElement('a');
-    a.href=dataUrl; a.download=filename; document.body.appendChild(a); a.click(); a.remove();
+    const a=document.createElement('a'); a.href=dataUrl; a.download=filename; document.body.appendChild(a); a.click(); a.remove();
   }
 }
 
-/* ===== 入口：アップロード ===== */
+/* 入口：アップロード */
 const uploadEl=document.getElementById('upload');
 if(uploadEl){
   uploadEl.addEventListener('change', async (e)=>{
@@ -571,22 +395,19 @@ if(uploadEl){
     const hexes=currentResultHexes();
     if(!hexes){ setUpMsg('先に診断を実行して、3色を確定してください。',true); return; }
 
-    // 簡易バリデーション
-    if(!/^image\/(png|jpeg|jpg|webp)$/i.test(file.type)){
-      setUpMsg('PNG/JPG/WebP の画像を選んでください（HEICは変換が必要）',true); return;
-    }
-    if(file.size>4*1024*1024){
-      setUpMsg('画像が大きすぎます（4MB以下推奨）',true); return;
-    }
+    if(!/^image\/(png|jpeg|jpg|webp)$/i.test(file.type)){ setUpMsg('PNG/JPG/WebP の画像を選んでください（HEICは変換が必要）',true); return; }
+    if(file.size>4*1024*1024){ setUpMsg('画像が大きすぎます（4MB以下推奨）',true); return; }
 
     try{
       setUpMsg('背景を削除中…（数秒かかります）');
       const cutBlob=await removeBgByJson(file);
       const subject=await loadImageFromBlob(cutBlob);
 
-      drawComposite(document.getElementById('cvMain'),hexes.main,subject);
-      drawComposite(document.getElementById('cvSub'), hexes.sub ,subject);
-      drawComposite(document.getElementById('cvAcc'), hexes.acc ,subject);
+      /* ★ フォールバックで確実に呼ぶ */
+      const dc = (window.drawComposite || drawComposite);
+      dc(document.getElementById('cvMain'), hexes.main, subject);
+      dc(document.getElementById('cvSub') , hexes.sub , subject);
+      dc(document.getElementById('cvAcc') , hexes.acc , subject);
 
       document.getElementById('previewArea').style.display='block';
       setUpMsg('プレビューを表示しました。各ボタンから保存できます。');
@@ -597,7 +418,7 @@ if(uploadEl){
   });
 }
 
-/* ===== 単品ダウンロード ===== */
+/* 単品ダウンロード */
 document.getElementById('dlMain')?.addEventListener('click',()=>downloadCanvas(document.getElementById('cvMain'),'main.png'));
 document.getElementById('dlSub') ?.addEventListener('click',()=>downloadCanvas(document.getElementById('cvSub') ,'sub.png'));
 document.getElementById('dlAcc') ?.addEventListener('click',()=>downloadCanvas(document.getElementById('cvAcc') ,'accent.png'));
