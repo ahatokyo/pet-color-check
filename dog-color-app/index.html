@@ -523,6 +523,27 @@ function drawComposite(canvas,bgHex,subjectImg){
   ctx.drawImage(subjectImg,dx,dy,dw,dh);
   ctx.shadowBlur=0;
 }
+<script id="dog-photo-module">
+  …
+  /* ===== 合成（単色背景＋中央フィット） ===== */
+  function drawComposite(canvas,bgHex,subjectImg){
+    const ctx=canvas.getContext('2d');
+    const W=canvas.width,H=canvas.height;
+    ctx.clearRect(0,0,W,H);
+    ctx.fillStyle=bgHex;
+    ctx.fillRect(0,0,W,H);
+    const pad=.05,maxW=W*(1-2*pad),maxH=H*(1-2*pad);
+    const scale=Math.min(maxW/subjectImg.width,maxH/subjectImg.height);
+    const dw=subjectImg.width*scale,dh=subjectImg.height*scale;
+    const dx=(W-dw)/2,dy=(H-dh)/2;
+    ctx.shadowColor='rgba(0,0,0,.15)';
+    ctx.shadowBlur=Math.round(W*.02);
+    ctx.drawImage(subjectImg,dx,dy,dw,dh);
+    ctx.shadowBlur=0;
+  }
+
+  /* ←ココを追加：グローバル公開（古い呼び出し対策） */
+  window.drawComposite = window.drawComposite || drawComposite;
 
 /* ===== ダウンロード（iOS配慮） ===== */
 function downloadCanvas(canvas, filename){
