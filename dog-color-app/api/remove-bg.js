@@ -1,4 +1,8 @@
 // dog-color-app/api/remove-bg.js
+// - クライアントから { filename, mime, data(base64) } を受け取る
+// - ClipDrop に投げて、成功時は image/png をそのまま返却
+// - 失敗時はステータスと詳細を JSON で返し、Function Logs にも出力
+
 import fetch from 'node-fetch';
 import FormData from 'form-data';
 
@@ -8,92 +12,74 @@ export default async function handler(req, res) {
       return res.status(405).json({ error: 'METHOD_NOT_ALLOWED' });
     }
 
-    // 後方互換: 旧payload { imageBase64: "data:image/png;base64,..." or "...base64" } を許容
-    // 新payload { filename, mime, data } も許容
-    let filename = 'upload.png';
-    let mime = 'image/png';
-    let base64;
+    const body = req.body || {};
+    const filename = body.filename || 'image.jpg';
+    const mime = (body.mime || 'image/jpeg').toLowerCase();
+    const base64 = body.data || body.imageBase64 || ''; // 両方に対応
 
-    if (req.body && typeof req.body === 'object') {
-      // 新方式
-      if (req.body.data) {
-        base64 = req.body.data;
-        if (req.body.filename) filename = req.body.filename;
-        if (req.body.mime) mime = req.body.mime;
-      }
-      // 旧方式
-      else if (req.body.imageBase64) {
-        const raw = String(req.body.imageBase64);
-        // dataURL の場合は先頭を剥がして mime を拾う
-        const m = raw.match(/^data:(image\/[a-z0-9.+-]+);base64,(.+)$/i);
-        if (m) {
-          mime = m[1];
-          base64 = m[2];
-          // 拡張子は簡易推定
-          if (/jpeg|jpg/.test(mime)) filename = 'upload.jpg';
-          else if (/png/.test(mime)) filename = 'upload.png';
-          else if (/webp/.test(mime)) filename = 'upload.webp';
-        } else {
-          // プレーンなbase64だけが来た場合
-          base64 = raw;
-        }
-      }
-    }
-
+    // 入力チェック
     if (!base64) {
+      console.error('[remove-bg] NO_IMAGE_DATA');
       return res.status(400).json({ error: 'NO_IMAGE_DATA' });
     }
+    if (!/^image\/(png|jpe?g|webp)$/.test(mime)) {
+      console.error('[remove-bg] UNSUPPORTED_TYPE:', mime);
+      return res.status(415).json({ error: 'UNSUPPORTED_TYPE', mime });
+    }
 
-    // Base64 → Buffer
+    // dataURL 形式にも対応（"data:image/png;base64,..." を切り出し）
+    const raw = base64.includes(',') ? base64.split(',')[1] : base64;
+
     let buffer;
     try {
-      buffer = Buffer.from(base64, 'base64');
+      buffer = Buffer.from(raw, 'base64');
     } catch (e) {
+      console.error('[remove-bg] INVALID_BASE64:', e);
       return res.status(400).json({ error: 'INVALID_BASE64', detail: String(e) });
     }
 
-    // 形式・サイズチェック（必要に応じ調整）
-    if (!/^image\/(png|jpe?g|webp)$/i.test(mime)) {
-      return res.status(415).json({ error: 'UNSUPPORTED_TYPE', detail: mime });
-    }
+    // 4MB制限（Vercel無制限ではないため）
     if (buffer.length > 4 * 1024 * 1024) {
+      console.error('[remove-bg] FILE_TOO_LARGE:', buffer.length);
       return res.status(413).json({ error: 'FILE_TOO_LARGE', size: buffer.length });
     }
 
     const apiKey = process.env.CLIPDROP_API_KEY;
     if (!apiKey) {
+      console.error('[remove-bg] Missing CLIPDROP_API_KEY');
       return res.status(500).json({ error: 'MISSING_API_KEY' });
     }
 
+    // フォーム組み立て
     const form = new FormData();
-    // Node環境では Blob ではなく Buffer を渡す
     form.append('image_file', buffer, { filename, contentType: mime });
 
-    const resp = await fetch('https://clipdrop-api.co/remove-background/v1', {
+    // ClipDrop へ
+    const r = await fetch('https://clipdrop-api.co/remove-background/v1', {
       method: 'POST',
       headers: { 'x-api-key': apiKey },
       body: form
     });
 
-    if (!resp.ok) {
-      const t = await resp.text();
-      console.error('ClipDrop error', resp.status, t);
-      return res.status(502).json({ error: 'CLIPDROP_ERROR', status: resp.status, detail: t });
+    const text = await r.text(); // 成功でもPNGバイナリが入るため先に確保
+    console.log('[remove-bg] ClipDrop status:', r.status);
+
+    if (!r.ok) {
+      // 失敗時の本文をログ出力
+      console.error('[remove-bg] ClipDrop error body:', text);
+      return res.status(502).json({
+        error: 'CLIPDROP_ERROR',
+        status: r.status,
+        detail: text
+      });
     }
 
-    const arr = await resp.arrayBuffer();
-
-    // 返し方は2通り：①PNGバイナリを直接 ②base64のdataURL
-    // フロントの実装が扱いやすい方を選んでください。
-    // --- ① 画像を直接返す（<img src="/api/remove-bg?..." /> のような使い方向け） ---
-    // res.setHeader('Content-Type', 'image/png');
-    // return res.send(Buffer.from(arr));
-
-    // --- ② JSONで dataURL を返す（今回のブラウザ実装に馴染みやすい） ---
-    const b64 = Buffer.from(arr).toString('base64');
-    return res.status(200).json({ transparentPngBase64: `data:image/png;base64,${b64}` });
+    // 成功：text には PNG の生データが入っているのでバイナリ化して返す
+    const out = Buffer.from(text, 'binary');
+    res.setHeader('Content-Type', 'image/png');
+    res.send(out);
   } catch (e) {
-    console.error(e);
-    return res.status(500).json({ error: 'SERVER_ERROR', detail: String(e) });
+    console.error('[remove-bg] SERVER_ERROR:', e);
+    res.status(500).json({ error: 'SERVER_ERROR', detail: String(e) });
   }
 }
