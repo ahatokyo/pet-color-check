@@ -1,8 +1,8 @@
 <!doctype html>
 <html lang="ja">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>愛犬パーソナルカラー診断</title>
 <style>
   :root{--ink:#222;--muted:#667085;--bg:#f7f7f9;--panel:#fff;--brand:#2d9cdb}
@@ -29,7 +29,7 @@
   .group h3{margin:0 0 6px;font-size:12px;color:var(--muted)}
   .traits-list label{display:flex;align-items:center;gap:6px;padding:3px 4px;border-radius:6px}
   .traits-list label:hover{background:#f6f7f9}
-  .actions{display:flex;gap:8px;margin-top:10px}
+  .actions{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
   .btn{border:0;border-radius:999px;padding:9px 14px;font-weight:700;cursor:pointer}
   .primary{background:var(--brand);color:#fff}
   .ghost{background:#f1f3f5;color:#333}
@@ -137,37 +137,35 @@
     </div>
   </section>
 </div>
-  </section>  <!-- ←診断結果カードの終わり -->
 
-  <!-- ここからプレビュー枠を追加 -->
-  <section class="card" id="photoSection" style="margin-top:16px;">
-    <h2>愛犬写真の背景除去＆3色プレビュー</h2>
-    <p class="hint" style="color:#555; background:#f6f7f8; padding:8px 10px; border-radius:8px;">
-      画像をアップロードすると背景を自動で除去し、診断の3色背景でプレビューできます
-    </p>
+<!-- ここから：背景除去プレビュー -->
+<section class="card" id="photoSection" style="margin:16px auto;max-width:1100px;">
+  <h2>愛犬写真の背景除去＆3色プレビュー</h2>
+  <p class="hint" style="color:#555; background:#f6f7f8; padding:8px 10px; border-radius:8px;">
+    画像をアップロードすると背景を自動で除去し、診断の3色背景でプレビューできます
+  </p>
 
-    <input id="upload" type="file" accept="image/*" />
-    <div id="upMsg" class="note" style="margin-top:8px;display:none;"></div>
+  <input id="upload" type="file" accept="image/*" />
+  <div id="upMsg" class="note" style="margin-top:8px;display:none;"></div>
 
-    <div id="previewArea" style="display:none; margin-top:12px;">
-      <div style="display:grid; gap:12px;">
-        <canvas id="cvMain" width="900" height="900" style="max-width:100%;border:1px solid #eee;border-radius:8px;"></canvas>
-        <canvas id="cvSub"  width="900" height="900" style="max-width:100%;border:1px solid #eee;border-radius:8px;"></canvas>
-        <canvas id="cvAcc"  width="900" height="900" style="max-width:100%;border:1px solid #eee;border-radius:8px;"></canvas>
-      </div>
-      <div class="actions" style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
-        <button class="btn" id="dlMain" style="padding:10px 14px; border-radius:8px; border:1px solid #ddd;">メイン色背景をダウンロード</button>
-        <button class="btn" id="dlSub"  style="padding:10px 14px; border-radius:8px; border:1px solid #ddd;">サブ色背景をダウンロード</button>
-        <button class="btn" id="dlAcc"  style="padding:10px 14px; border-radius:8px; border:1px solid #ddd;">アクセント色背景をダウンロード</button>
-      </div>
+  <div id="previewArea" style="display:none; margin-top:12px;">
+    <div style="display:grid; gap:12px;">
+      <canvas id="cvMain" width="900" height="900" style="max-width:100%;border:1px solid #eee;border-radius:8px;"></canvas>
+      <canvas id="cvSub"  width="900" height="900" style="max-width:100%;border:1px solid #eee;border-radius:8px;"></canvas>
+      <canvas id="cvAcc"  width="900" height="900" style="max-width:100%;border:1px solid #eee;border-radius:8px;"></canvas>
     </div>
-  </section>
-  <!-- ここまでプレビュー枠 -->
-</div> <!-- ←親コンテナの閉じタグならそのまま維持 -->
+    <div class="actions" style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
+      <button class="btn" id="dlMain" style="padding:10px 14px; border-radius:8px; border:1px solid #ddd;">メイン色背景をダウンロード</button>
+      <button class="btn" id="dlSub"  style="padding:10px 14px; border-radius:8px; border:1px solid #ddd;">サブ色背景をダウンロード</button>
+      <button class="btn" id="dlAcc"  style="padding:10px 14px; border-radius:8px; border:1px solid #ddd;">アクセント色背景をダウンロード</button>
+    </div>
+  </div>
+</section>
+<!-- ここまで：背景除去プレビュー -->
 
 <script>
 /* ====== 70色パレット ====== */
-const PALETTE=[ /* 省略せず完全定義 */ 
+const PALETTE=[
   {hex:"#F5F5DC",cat:"ベージュ",tone:"ライト",name:"ベージュVL"},
   {hex:"#E4CDA7",cat:"ベージュ",tone:"ライト",name:"ベージュL"},
   {hex:"#D2B48C",cat:"ベージュ",tone:"ミドル",name:"タン"},
@@ -248,7 +246,7 @@ const COATS=[
   ["ライトブラウン","#B6864D"],["ブラウン","#8B5A2B"],["ブリンドル","#5A4636"],["ダークチョコレート","#3A2C2A"],["ブラック","#000000"]
 ];
 
-/* ====== 性格リスト ====== */
+/* ====== 性格 ====== */
 const TRAITS={
   intro:["繊細","慎重","警戒心が強い","寂しがり屋","おだやか","マイペース","独立心が強い","頑固"],
   neutral:["賢い","集中力が高い","クール","素直","好奇心旺盛","甘えん坊","順応性が高い"],
@@ -260,19 +258,10 @@ const hexToRgb=h=>{const m=h.replace('#','');return{r:parseInt(m.slice(0,2),16),
 const rgbToHue=({r,g,b})=>{r/=255;g/=255;b/=255;const mx=Math.max(r,g,b),mn=Math.min(r,g,b),d=mx-mn;if(d===0)return 0;let h=mx===r?(g-b)/d:mx===g?(b-r)/d+2:(r-g)/d+4;return (h*60+360)%360};
 const hueOf=hex=>rgbToHue(hexToRgb(hex));
 const hueDist=(a,b)=>{const d=Math.abs(a-b)%360;return d>180?360-d:d};
-function rgbToXyz(r,g,b){
-  r/=255;g/=255;b/=255;
-  r=r>0.04045?((r+0.055)/1.055)**2.4:r/12.92;
-  g=g>0.04045?((g+0.055)/1.055)**2.4:g/12.92;
-  b=b>0.04045?((b+0.055)/1.055)**2.4:b/12.92;
-  const x=r*0.4124+g*0.3576+b*0.1805;
-  const y=r*0.2126+g*0.7152+b*0.0722;
-  const z=r*0.0193+g*0.1192+b*0.9505;
-  return{x:x*100,y:y*100,z:z*100}
-}
+function rgbToXyz(r,g,b){r/=255;g/=255;b/=255;r=r>0.04045?((r+0.055)/1.055)**2.4:r/12.92;g=g>0.04045?((g+0.055)/1.055)**2.4:g/12.92;b=b>0.04045?((b+0.055)/1.055)**2.4:b/12.92;const x=r*0.4124+g*0.3576+b*0.1805;const y=r*0.2126+g*0.7152+b*0.0722;const z=r*0.0193+g*0.1192+b*0.9505;return{x:x*100,y:y*100,z:z*100}}
 function xyzToLab(x,y,z){const xr=x/95.047,yr=y/100,zr=z/108.883;const f=t=>t>0.008856?Math.cbrt(t):(7.787*t+16/116);const fx=f(xr),fy=f(yr),fz=f(zr);return{L:116*fy-16,a:500*(fx-fy),b:200*(fy-fz)}}
 const hexToLab=hex=>{const {r,g,b}=hexToRgb(hex);const {x,y,z}=rgbToXyz(r,g,b);return xyzToLab(x,y,z)};
-function labChroma(hex){const L=hexToLab(hex);return Math.hypot(L.a,L.b);}
+function labChroma(hex){const L=hexToLab(hex);return Math.hypot(L.a,L.b)}
 
 /* ====== 性格 → センチメント ====== */
 const traitGroup={}; 
@@ -297,17 +286,11 @@ function hueBiasScore(colorHue, prefHues){
   return best;
 }
 
-/* ====== シード乱数（バグ修正：閉じカッコ追加） ====== */
+/* ====== シード乱数 ====== */
 function seedFrom(str){let h=2166136261>>>0;for(let i=0;i<str.length;i++){h^=str.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0}
-function rng(seed){
-  let s=seed>>>0;
-  return ()=>{
-    s=(s*1664525+1013904223)>>>0;
-    return (s&0xffff)/0x10000;
-  };
-}
+function rng(seed){let s=seed>>>0;return ()=>{s=(s*1664525+1013904223)>>>0;return (s&0xffff)/0x10000};}
 
-/* ====== 診断ロジック（偏り対策込み） ====== */
+/* ====== 診断ロジック ====== */
 function pickColors(coatName, traits){
   const coatHex = (new Map(COATS)).get(coatName) || "#FFFFFF";
   const coatHue = hueOf(coatHex);
@@ -476,9 +459,12 @@ document.getElementById("reset").addEventListener("click", ()=>{
   });
   const msg=document.getElementById("msg"); msg.style.display="none";
 });
-</script>
-<script>
-// === 既存の診断結果（HEX）を取得 ===
+
+/* =========================
+   背景除去まわり（完全版）
+   ========================= */
+
+// 診断済みHEXを取得
 function currentResultHexes(){
   const m = document.getElementById('mainHex')?.textContent.trim();
   const s = document.getElementById('subHex')?.textContent.trim();
@@ -487,91 +473,7 @@ function currentResultHexes(){
   return {main:m, sub:s, acc:a};
 }
 
-// === ファイル→base64 ===
-function fileToBase64(file) {
-  return new Promise((resolve,reject)=>{
-    const r=new FileReader();
-    r.onload=()=>resolve(r.result);
-    r.onerror=reject;
-    r.readAsDataURL(file);
-  });
-}
-
-/* ===== エラー詳細を出すための置き換え版 ===== */
-
-// 表示ユーティリティ（既存の #upMsg を流用）
-function setUpMsg(text, isError=false){
-  const el = document.getElementById('upMsg');
-  if(!el) return;
-  el.style.display = 'block';
-  el.style.color   = isError ? '#c00' : '#555';
-  el.textContent   = text;
-}
-
-// File -> dataURL(base64)
-function fileToDataURL(file){
-  return new Promise((res, rej)=>{
-    const r = new FileReader();
-    r.onload = ()=>res(r.result);
-    r.onerror = rej;
-    r.readAsDataURL(file);
-  });
-}
-
-// 重い画像は少し縮小（長辺2000px目安）
-async function maybeDownscale(file, max=2000){
-  // 4MB超だけ縮小（Vercel対策）
-  if (file.size < 4*1024*1024) return file;
-
-  const bmp = await createImageBitmap(file);
-  const scale = Math.min(1, max / Math.max(bmp.width, bmp.height));
-  if (scale >= 1) return file;
-
-  const canvas = document.createElement('canvas');
-  canvas.width  = Math.round(bmp.width  * scale);
-  canvas.height = Math.round(bmp.height * scale);
-  const ctx = canvas.getContext('2d');
-  ctx.drawImage(bmp, 0, 0, canvas.width, canvas.height);
-
-  const blob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', 0.9));
-  return new File([blob], (file.name || 'image') + '_scaled.jpg', { type: 'image/jpeg' });
-}
-
-// サーバー呼び出し：JSONで filename/mime/data(base64) を渡す
-async function postRemoveBgJSON({ filename, mime, base64 }){
-  const res = await fetch('/api/remove-bg', {
-    method: 'POST',
-    headers: { 'Content-Type':'application/json' },
-    body: JSON.stringify({ filename, mime, data: base64 })
-  });
-
-  const ct = res.headers.get('content-type') || '';
-
-  if (!res.ok) {
-    // 失敗時は本文をそのまま返す
-    let detail = '';
-    try {
-      detail = ct.includes('application/json') ? JSON.stringify(await res.json()) : await res.text();
-    } catch {}
-    throw new Error(`HTTP ${res.status} ${detail}`);
-  }
-
-  // 成功時は PNG バイナリが返る実装
-  if (ct.startsWith('image/')) {
-    return await res.blob(); // Blob(PNG)
-  }
-
-  // 念のため JSON 形式（旧実装）も対応
-  const j = await res.json().catch(()=>null);
-  if (j && j.transparentPngBase64) {
-    const b = atob(j.transparentPngBase64.split(',')[1] || j.transparentPngBase64);
-    const u8 = new Uint8Array(b.length); for (let i=0;i<b.length;i++) u8[i]=b.charCodeAt(i);
-    return new Blob([u8], { type:'image/png' });
-  }
-  throw new Error('Unexpected response from API');
-}
-
-// 画像読み込み
+// Blob画像をロード
 function loadImageFromBlob(blob){
   return new Promise((resolve,reject)=>{
     const url = URL.createObjectURL(blob);
@@ -581,81 +483,131 @@ function loadImageFromBlob(blob){
     im.src = url;
   });
 }
-<script>
-// === 合成（単色背景＋中央フィット） ===
+
+// 合成（単色背景＋中央フィット）
 function drawComposite(canvas, bgHex, subjectImg) {
   const ctx = canvas.getContext('2d');
-  const W = canvas.width, H = canvas.height;
-
-  // 背景を塗る
+  const W=canvas.width, H=canvas.height;
   ctx.clearRect(0,0,W,H);
   ctx.fillStyle = bgHex;
   ctx.fillRect(0,0,W,H);
 
-  // 画像を中央にフィットさせて描画（余白5%）
   const pad = 0.05;
-  const maxW = W * (1 - 2*pad);
-  const maxH = H * (1 - 2*pad);
-  const scale = Math.min(maxW / subjectImg.width, maxH / subjectImg.height);
-  const dw = subjectImg.width * scale;
-  const dh = subjectImg.height * scale;
-  const dx = (W - dw) / 2;
-  const dy = (H - dh) / 2;
+  const maxW = W*(1-2*pad);
+  const maxH = H*(1-2*pad);
+  const scale = Math.min(maxW/subjectImg.width, maxH/subjectImg.height);
+  const dw = subjectImg.width*scale;
+  const dh = subjectImg.height*scale;
+  const dx = (W-dw)/2;
+  const dy = (H-dh)/2;
 
-  // うっすら影（見栄え用）
   ctx.shadowColor = 'rgba(0,0,0,0.15)';
-  ctx.shadowBlur = Math.round(W * 0.02);
+  ctx.shadowBlur = Math.round(W*0.02);
   ctx.drawImage(subjectImg, dx, dy, dw, dh);
   ctx.shadowBlur = 0;
 }
-</script>
-// ★ ここがアップロード入口（#upload の change）
+
+// iOS対策を含むCanvasダウンロード
+function downloadCanvas(canvas, filename){
+  const dataUrl = canvas.toDataURL('image/png');
+  const isIOS = /iP(hone|ad|od)/.test(navigator.platform) ||
+                (navigator.userAgent.includes('Mac') && 'ontouchend' in document);
+  if (isIOS) {
+    const w = window.open();
+    if (w) {
+      w.document.write('<html><head><title>長押しで保存</title></head><body style="margin:0">');
+      w.document.write(`<img src="${dataUrl}" style="width:100%;height:auto;display:block">`);
+      w.document.write('</body></html>');
+      w.document.close();
+    } else {
+      const a=document.createElement('a'); a.href=dataUrl; a.target='_blank'; document.body.appendChild(a); a.click(); a.remove();
+    }
+  } else {
+    const a=document.createElement('a'); a.download = filename; a.href = dataUrl;
+    document.body.appendChild(a); a.click(); a.remove();
+  }
+}
+
+// remove-bg（JSON/base64）にPOST
+async function callRemoveBgJSON(file) {
+  // HEICなどはそのままではNG → ブラウザ側のacceptで弾く想定
+  // 送信は filename / mime / base64(データ部のみ)
+  const buf = await file.arrayBuffer();
+  const b64 = btoa(String.fromCharCode(...new Uint8Array(buf)));
+
+  const res = await fetch('/api/remove-bg', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({
+      filename: file.name || 'image.jpg',
+      mime: file.type || 'image/jpeg',
+      data: b64
+    })
+  });
+
+  // 画像(PNGバイナリ)が返る想定
+  if (!res.ok) {
+    // なるべく詳細を表示
+    let detail = '';
+    try { const j = await res.json(); detail = j.detail || JSON.stringify(j); } catch(_) {}
+    throw new Error(`remove-bg failed: HTTP ${res.status} ${detail}`);
+  }
+  return await res.blob();
+}
+
+// アップロード入口
 const uploadEl = document.getElementById('upload');
 if (uploadEl) {
   uploadEl.addEventListener('change', async (e)=>{
     const file = e.target.files?.[0];
     if(!file) return;
 
+    const upMsg = document.getElementById('upMsg');
     const hexes = currentResultHexes();
     if(!hexes){
-      setUpMsg('先に診断を実行して、3色を確定してください。', true);
+      upMsg.style.display='block';
+      upMsg.textContent='先に診断を実行して、3色を確定してください。';
+      return;
+    }
+
+    // 型・サイズ軽いバリデーション
+    if (!/^image\/(png|jpeg|jpg|webp)$/i.test(file.type)) {
+      upMsg.style.display='block';
+      upMsg.textContent='PNG/JPEG/WebP の画像を選択してください（HEICは対応外）';
+      return;
+    }
+    if (file.size > 4 * 1024 * 1024) {
+      upMsg.style.display='block';
+      upMsg.textContent='画像が大きすぎます（4MB以下推奨）';
       return;
     }
 
     try{
-      setUpMsg('背景を削除中…（数秒かかります）');
+      upMsg.style.display='block';
+      upMsg.textContent='背景を削除中…（数秒かかります）';
 
-      // HEICなど非対応を弾く（必要に応じて拡張）
-      if (!/^image\/(png|jpe?g|webp|gif)$/i.test(file.type)) {
-        setUpMsg(`未対応の画像形式です（${file.type}）。PNG/JPEG/WebP/GIF をお使いください。`, true);
-        return;
-      }
+      const outBlob = await callRemoveBgJSON(file);           // ← JSON(base64) 方式
+      const subject  = await loadImageFromBlob(outBlob);
 
-      const toSend = await maybeDownscale(file);                // 必要なら縮小
-      const dataURL = await fileToDataURL(toSend);              // base64
-      const base64  = dataURL.split(',')[1] || dataURL;
-
-      // サーバーへ JSON で送る
-      const pngBlob = await postRemoveBgJSON({
-        filename: toSend.name || 'upload.jpg',
-        mime:     toSend.type || 'image/jpeg',
-        base64
-      });
-
-      // プレビュー合成（既存の関数をそのまま利用）
-      const subject = await loadImageFromBlob(pngBlob);
       drawComposite(document.getElementById('cvMain'), hexes.main, subject);
       drawComposite(document.getElementById('cvSub'),  hexes.sub,  subject);
       drawComposite(document.getElementById('cvAcc'),  hexes.acc,  subject);
 
       document.getElementById('previewArea').style.display='block';
-      setUpMsg('プレビューを表示しました。各ボタンから保存できます。');
+      upMsg.textContent='プレビューを表示しました。各ボタンから保存できます。';
     }catch(err){
       console.error(err);
-      // ここでエラー本文を画面に出す
-      setUpMsg('背景除去に失敗しました：' + String(err.message || err), true);
+      upMsg.style.display='block';
+      // サーバー詳細が含まれるように
+      upMsg.textContent='背景除去に失敗しました：' + (err?.message || String(err));
     }
   });
 }
+
+// ダウンロードボタン
+document.getElementById('dlMain')?.addEventListener('click', ()=>downloadCanvas(document.getElementById('cvMain'), 'main.png'));
+document.getElementById('dlSub') ?.addEventListener('click', ()=>downloadCanvas(document.getElementById('cvSub'),  'sub.png'));
+document.getElementById('dlAcc') ?.addEventListener('click', ()=>downloadCanvas(document.getElementById('cvAcc'),  'accent.png'));
 </script>
+</body>
 </html>
