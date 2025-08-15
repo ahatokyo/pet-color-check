@@ -1,8 +1,4 @@
 // dog-color-app/api/remove-bg.js
-// - クライアントから { filename, mime, data(base64) } を受け取る
-// - ClipDrop に投げて、成功時は image/png をそのまま返却
-// - 失敗時はステータスと詳細を JSON で返し、Function Logs にも出力
-
 import fetch from 'node-fetch';
 import FormData from 'form-data';
 
@@ -12,74 +8,75 @@ export default async function handler(req, res) {
       return res.status(405).json({ error: 'METHOD_NOT_ALLOWED' });
     }
 
-    const body = req.body || {};
-    const filename = body.filename || 'image.jpg';
-    const mime = (body.mime || 'image/jpeg').toLowerCase();
-    const base64 = body.data || body.imageBase64 || ''; // 両方に対応
-
-    // 入力チェック
-    if (!base64) {
-      console.error('[remove-bg] NO_IMAGE_DATA');
+    const { filename = 'image.jpg', mime = 'image/jpeg', data } = req.body || {};
+    if (!data) {
       return res.status(400).json({ error: 'NO_IMAGE_DATA' });
     }
-    if (!/^image\/(png|jpe?g|webp)$/.test(mime)) {
-      console.error('[remove-bg] UNSUPPORTED_TYPE:', mime);
-      return res.status(415).json({ error: 'UNSUPPORTED_TYPE', mime });
-    }
 
-    // dataURL 形式にも対応（"data:image/png;base64,..." を切り出し）
-    const raw = base64.includes(',') ? base64.split(',')[1] : base64;
-
+    // Base64 -> Buffer
     let buffer;
     try {
-      buffer = Buffer.from(raw, 'base64');
+      buffer = Buffer.from(data, 'base64');
     } catch (e) {
-      console.error('[remove-bg] INVALID_BASE64:', e);
+      console.error('[API] INVALID_BASE64:', e);
       return res.status(400).json({ error: 'INVALID_BASE64', detail: String(e) });
     }
 
-    // 4MB制限（Vercel無制限ではないため）
-    if (buffer.length > 4 * 1024 * 1024) {
-      console.error('[remove-bg] FILE_TOO_LARGE:', buffer.length);
-      return res.status(413).json({ error: 'FILE_TOO_LARGE', size: buffer.length });
+    // 受け入れ形式（ClipDropは png/jpg/webp 想定）
+    const normMime = mime.toLowerCase();
+    if (!/^image\/(png|jpe?g|webp)$/.test(normMime)) {
+      console.error('[API] UNSUPPORTED_TYPE:', normMime);
+      return res.status(415).json({ error: 'UNSUPPORTED_TYPE', detail: normMime });
+    }
+
+    // サイズ上限（暫定 6MB。大きければ 2000px くらいに縮小してから再送を推奨）
+    const MAX = 6 * 1024 * 1024;
+    if (buffer.length > MAX) {
+      console.error('[API] FILE_TOO_LARGE:', buffer.length);
+      return res.status(413).json({ error: 'FILE_TOO_LARGE', size: buffer.length, max: MAX });
     }
 
     const apiKey = process.env.CLIPDROP_API_KEY;
     if (!apiKey) {
-      console.error('[remove-bg] Missing CLIPDROP_API_KEY');
+      console.error('[API] Missing CLIPDROP_API_KEY');
       return res.status(500).json({ error: 'MISSING_API_KEY' });
     }
 
-    // フォーム組み立て
+    // ClipDrop へ multipart/form-data で送る
     const form = new FormData();
-    form.append('image_file', buffer, { filename, contentType: mime });
+    form.append('image_file', buffer, { filename, contentType: normMime });
 
-    // ClipDrop へ
+    console.log('[API] calling ClipDrop', {
+      size: buffer.length,
+      mime: normMime,
+      filename
+    });
+
     const r = await fetch('https://clipdrop-api.co/remove-background/v1', {
       method: 'POST',
       headers: { 'x-api-key': apiKey },
       body: form
     });
 
-    const text = await r.text(); // 成功でもPNGバイナリが入るため先に確保
-    console.log('[remove-bg] ClipDrop status:', r.status);
-
+    const ct = r.headers.get('content-type') || '';
     if (!r.ok) {
-      // 失敗時の本文をログ出力
-      console.error('[remove-bg] ClipDrop error body:', text);
+      const text = ct.includes('application/json') ? await r.text() : await r.text();
+      console.error('[API] ClipDrop error', r.status, text);
       return res.status(502).json({
         error: 'CLIPDROP_ERROR',
         status: r.status,
-        detail: text
+        detail: text.slice(0, 1000), // 長すぎる場合はカット
+        ct
       });
     }
 
-    // 成功：text には PNG の生データが入っているのでバイナリ化して返す
-    const out = Buffer.from(text, 'binary');
+    // ClipDropは透明PNGが返ってくる
+    const buf = Buffer.from(await r.arrayBuffer());
+    console.log('[API] ClipDrop OK, bytes:', buf.length, 'ct:', ct);
     res.setHeader('Content-Type', 'image/png');
-    res.send(out);
+    return res.send(buf);
   } catch (e) {
-    console.error('[remove-bg] SERVER_ERROR:', e);
-    res.status(500).json({ error: 'SERVER_ERROR', detail: String(e) });
+    console.error('[API] SERVER_ERROR', e);
+    return res.status(500).json({ error: 'SERVER_ERROR', detail: String(e) });
   }
 }
