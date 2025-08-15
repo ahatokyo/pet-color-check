@@ -137,6 +137,33 @@
     </div>
   </section>
 </div>
+  </section>  <!-- ←診断結果カードの終わり -->
+
+  <!-- ここからプレビュー枠を追加 -->
+  <section class="card" id="photoSection" style="margin-top:16px;">
+    <h2>愛犬写真の背景除去＆3色プレビュー</h2>
+    <p class="hint" style="color:#555; background:#f6f7f8; padding:8px 10px; border-radius:8px;">
+      画像をアップロードすると背景を自動で除去し、診断の3色背景でプレビューできます
+    </p>
+
+    <input id="upload" type="file" accept="image/*" />
+    <div id="upMsg" class="note" style="margin-top:8px;display:none;"></div>
+
+    <div id="previewArea" style="display:none; margin-top:12px;">
+      <div style="display:grid; gap:12px;">
+        <canvas id="cvMain" width="900" height="900" style="max-width:100%;border:1px solid #eee;border-radius:8px;"></canvas>
+        <canvas id="cvSub"  width="900" height="900" style="max-width:100%;border:1px solid #eee;border-radius:8px;"></canvas>
+        <canvas id="cvAcc"  width="900" height="900" style="max-width:100%;border:1px solid #eee;border-radius:8px;"></canvas>
+      </div>
+      <div class="actions" style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
+        <button class="btn" id="dlMain" style="padding:10px 14px; border-radius:8px; border:1px solid #ddd;">メイン色背景をダウンロード</button>
+        <button class="btn" id="dlSub"  style="padding:10px 14px; border-radius:8px; border:1px solid #ddd;">サブ色背景をダウンロード</button>
+        <button class="btn" id="dlAcc"  style="padding:10px 14px; border-radius:8px; border:1px solid #ddd;">アクセント色背景をダウンロード</button>
+      </div>
+    </div>
+  </section>
+  <!-- ここまでプレビュー枠 -->
+</div> <!-- ←親コンテナの閉じタグならそのまま維持 -->
 
 <script>
 /* ====== 70色パレット ====== */
@@ -450,5 +477,150 @@ document.getElementById("reset").addEventListener("click", ()=>{
   const msg=document.getElementById("msg"); msg.style.display="none";
 });
 </script>
+<script>
+// === 既存の診断結果（HEX）を取得 ===
+function currentResultHexes(){
+  const m = document.getElementById('mainHex')?.textContent.trim();
+  const s = document.getElementById('subHex')?.textContent.trim();
+  const a = document.getElementById('accHex')?.textContent.trim();
+  if(!m || m==='—' || !s || s==='—' || !a || a==='—') return null;
+  return {main:m, sub:s, acc:a};
+}
+
+// === ファイル→base64 ===
+function fileToBase64(file) {
+  return new Promise((resolve,reject)=>{
+    const r=new FileReader();
+    r.onload=()=>resolve(r.result);
+    r.onerror=reject;
+    r.readAsDataURL(file);
+  });
+}
+
+// === 背景除去API（Vercelの /api/remove-bg ） ===
+async function removeBackground(imageBase64){
+  const r = await fetch('/api/remove-bg', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ imageBase64 })
+  });
+  if(!r.ok) throw new Error('remove-bg failed');
+  const j = await r.json();
+  return j.transparentPngBase64; // data:image/png;base64,...
+}
+
+// === 画像読み込み ===
+function loadImage(src) {
+  return new Promise((resolve,reject)=>{
+    const im = new Image();
+    im.onload=()=>resolve(im);
+    im.onerror=reject;
+    im.src=src;
+  });
+}
+
+// === 合成（単色背景＋中央フィット） ===
+function drawComposite(canvas, bgHex, subjectImg) {
+  const ctx = canvas.getContext('2d');
+  const W=canvas.width, H=canvas.height;
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle = bgHex;
+  ctx.fillRect(0,0,W,H);
+
+  const pad = 0.05;
+  const maxW = W*(1-2*pad);
+  const maxH = H*(1-2*pad);
+  const scale = Math.min(maxW/subjectImg.width, maxH/subjectImg.height);
+  const dw = subjectImg.width*scale;
+  const dh = subjectImg.height*scale;
+  const dx = (W-dw)/2;
+  const dy = (H-dh)/2;
+
+  ctx.shadowColor = 'rgba(0,0,0,0.15)';
+  ctx.shadowBlur = Math.round(W*0.02);
+  ctx.drawImage(subjectImg, dx, dy, dw, dh);
+  ctx.shadowBlur = 0;
+}
+
+// === スマホ（iOS）のダウンロード対策 ===
+function downloadCanvas(canvas, filename){
+  const dataUrl = canvas.toDataURL('image/png');
+
+  // iOS Safari は download属性が効かないことがある → 新規タブで開いて長押し保存を案内
+  const isIOS = /iP(hone|ad|od)/.test(navigator.platform) ||
+                (navigator.userAgent.includes('Mac') && 'ontouchend' in document);
+
+  if (isIOS) {
+    const newWin = window.open();
+    if (newWin) {
+      newWin.document.write('<html><head><title>長押しで保存</title></head><body style="margin:0">');
+      newWin.document.write(`<img src="${dataUrl}" style="width:100%;height:auto;display:block">`);
+      newWin.document.write('</body></html>');
+      newWin.document.close();
+    } else {
+      // ポップアップブロック時のフォールバック
+      const a = document.createElement('a');
+      a.href = dataUrl;
+      a.target = '_blank';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    }
+  } else {
+    const a=document.createElement('a');
+    a.download = filename;
+    a.href = dataUrl;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  }
+}
+
+// === 入口：ファイル選択 → 背景除去 → 3色合成表示 ===
+const uploadEl = document.getElementById('upload');
+if (uploadEl) {
+  uploadEl.addEventListener('change', async (e)=>{
+    const file = e.target.files?.[0];
+    if(!file) return;
+
+    const upMsg = document.getElementById('upMsg');
+    const hexes = currentResultHexes();
+    if(!hexes){
+      upMsg.style.display='block';
+      upMsg.textContent='先に診断を実行して、3色を確定してください。';
+      return;
+    }
+
+    try{
+      upMsg.style.display='block';
+      upMsg.textContent='背景を削除中…（数秒かかります）';
+
+      const b64 = await fileToBase64(file);
+      const cut = await removeBackground(b64);
+      const subject = await loadImage(cut);
+
+      drawComposite(document.getElementById('cvMain'), hexes.main, subject);
+      drawComposite(document.getElementById('cvSub'),  hexes.sub,  subject);
+      drawComposite(document.getElementById('cvAcc'),  hexes.acc,  subject);
+
+      document.getElementById('previewArea').style.display='block';
+      upMsg.textContent='プレビューを表示しました。各ボタンから保存できます。';
+    }catch(err){
+      console.error(err);
+      upMsg.style.display='block';
+      upMsg.textContent='背景除去に失敗しました。画像サイズや形式を見直して再試行してください。';
+    }
+  });
+}
+
+// === 単品ダウンロードボタン ===
+const dlMain = document.getElementById('dlMain');
+if (dlMain) dlMain.addEventListener('click', ()=>downloadCanvas(document.getElementById('cvMain'), 'main.png'));
+const dlSub  = document.getElementById('dlSub');
+if (dlSub)  dlSub.addEventListener('click',  ()=>downloadCanvas(document.getElementById('cvSub'),  'sub.png'));
+const dlAcc  = document.getElementById('dlAcc');
+if (dlAcc)  dlAcc.addEventListener('click',  ()=>downloadCanvas(document.getElementById('cvAcc'),  'accent.png'));
+</script>
+
 </body>
 </html>
