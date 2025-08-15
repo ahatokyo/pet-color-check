@@ -1,0 +1,11 @@
+{
+  "name": "dog-color-app",
+  "version": "1.0.0",
+  "private": true,
+  "type": "commonjs",
+  "dependencies": {
+    "form-data": "^4.0.0",
+    "node-fetch": "^2.7.0",
+    "jszip": "^3.10.1"
+  }
+}
