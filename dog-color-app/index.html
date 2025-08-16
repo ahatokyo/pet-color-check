@@ -44,6 +44,7 @@
   .rowsm code{background:#f2f4f7;border-radius:6px;padding:2px 6px}
   .badge{display:none}
 
+  /* Mobile */
   @media (max-width: 640px) {
     .app { grid-template-columns: 1fr; padding: 10px; }
     .coat-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
@@ -137,7 +138,7 @@
     画像をアップロードすると背景を自動で除去し、診断の3色背景でプレビューできます
   </p>
 
-  <input id="upload" type="file" accept="image/*" />
+  <input id="upload" type="file" accept="image/png,image/jpeg,image/webp" />
   <div id="upMsg" class="note" style="margin-top:8px;display:none;"></div>
 
   <div id="previewArea" style="display:none; margin-top:12px;">
@@ -154,10 +155,10 @@
   </div>
 </section>
 
-<!-- ここからJS -->
+<!-- ====== 診断ロジックなど（従来どおり） ====== -->
 <script>
-/* ====== 70色パレット ====== */
-const PALETTE=[ /* 省略なし（以前のまま） */
+/* ====== パレット（70色） ====== */
+const PALETTE=[
   {hex:"#F5F5DC",cat:"ベージュ",tone:"ライト",name:"ベージュVL"},
   {hex:"#E4CDA7",cat:"ベージュ",tone:"ライト",name:"ベージュL"},
   {hex:"#D2B48C",cat:"ベージュ",tone:"ミドル",name:"タン"},
@@ -238,7 +239,7 @@ const COATS=[
   ["ライトブラウン","#B6864D"],["ブラウン","#8B5A2B"],["ブリンドル","#5A4636"],["ダークチョコレート","#3A2C2A"],["ブラック","#000000"]
 ];
 
-/* ====== 性格リスト ====== */
+/* ====== 性格 ====== */
 const TRAITS={
   intro:["繊細","慎重","警戒心が強い","寂しがり屋","おだやか","マイペース","独立心が強い","頑固"],
   neutral:["賢い","集中力が高い","クール","素直","好奇心旺盛","甘えん坊","順応性が高い"],
@@ -385,7 +386,6 @@ function renderCoats(){
 }
 renderCoats();
 
-/* 性格リスト描画＋制限（1〜3つ） */
 function addTraitList(containerId, list){
   const el=document.getElementById(containerId);
   list.forEach(t=>{
@@ -411,16 +411,12 @@ function limitTraits(e){
     setTimeout(()=>note.style.display="none",1400);
   }
 }
-
-/* 結果描画 */
 function setSw(prefix, color){
   document.getElementById(prefix+"Chip").style.background=color.hex;
   document.getElementById(prefix+"Hex").textContent=color.hex;
   document.getElementById(prefix+"Name").textContent=color.name;
   document.getElementById(prefix+"Tone").textContent=color.tone;
 }
-
-/* 診断実行：毛色必須・性格1〜3つ必須 */
 function run(){
   const msg=document.getElementById("msg");
   const traits=selectedTraits();
@@ -437,8 +433,6 @@ function run(){
   }
 }
 document.getElementById("run").addEventListener("click", run);
-
-/* リセット */
 document.getElementById("reset").addEventListener("click", ()=>{
   selectedCoat=null;
   document.querySelectorAll(".coat").forEach(c=>c.classList.remove("selected"));
@@ -453,9 +447,14 @@ document.getElementById("reset").addEventListener("click", ()=>{
 });
 </script>
 
-<!-- 写真モジュール（唯一のアップロード処理） -->
+<!-- ====== 写真モジュール（RangeError対策版） ====== -->
 <script id="dog-photo-module">
-/* ===== 既存HEXの取得とメッセージ ===== */
+function setUpMsg(text,isErr=false){
+  const el=document.getElementById('upMsg');
+  el.style.display='block';
+  el.style.color=isErr?'#b00020':'#b26b00';
+  el.textContent=text;
+}
 function currentResultHexes(){
   const m=document.getElementById('mainHex')?.textContent.trim();
   const s=document.getElementById('subHex')?.textContent.trim();
@@ -463,14 +462,6 @@ function currentResultHexes(){
   if(!m||m==='—'||!s||s==='—'||!a||a==='—') return null;
   return {main:m,sub:s,acc:a};
 }
-function setUpMsg(text,isErr=false){
-  const el=document.getElementById('upMsg');
-  el.style.display='block';
-  el.style.color=isErr?'#b00020':'#b26b00';
-  el.textContent=text;
-}
-
-/* ===== 画像→<img> ===== */
 function fileToHTMLImage(file){
   return new Promise((resolve,reject)=>{
     const fr=new FileReader();
@@ -484,33 +475,16 @@ function fileToHTMLImage(file){
     fr.readAsDataURL(file);
   });
 }
-
-/* ===== Canvasで縮小してJPEG化 ===== */
 function canvasDownscaleToJpeg(img, targetMax=1600, quality=0.85){
   const w=img.width,h=img.height;
-  const scale=Math.min(1, targetMax/Math.max(w,h));
-  const dw=Math.max(1,Math.round(w*scale));
-  const dh=Math.max(1,Math.round(h*scale));
+  const scale = Math.min(1, targetMax/Math.max(w,h));
+  const dw = Math.max(1, Math.round(w*scale));
+  const dh = Math.max(1, Math.round(h*scale));
   const cv=document.createElement('canvas'); cv.width=dw; cv.height=dh;
   const ctx=cv.getContext('2d');
   ctx.drawImage(img,0,0,dw,dh);
   return new Promise(resolve=>cv.toBlob(b=>resolve(b),'image/jpeg',quality));
 }
-
-/* ===== 4MB未満になるまで段階的に調整 ===== */
-async function ensureJpegUnder4MB(file, maxBytes=4*1024*1024){
-  const img=await fileToHTMLImage(file);
-  let maxSide=1600, quality=0.85;
-  for(let i=0;i<6;i++){
-    const blob=await canvasDownscaleToJpeg(img,maxSide,quality);
-    if(!blob) throw new Error('画像変換に失敗しました（toBlobがnull）');
-    if(blob.size<=maxBytes) return blob;
-    if(quality>0.7){ quality-=0.1; } else { maxSide=Math.floor(maxSide*0.8); }
-  }
-  throw new Error('画像が大きすぎます。別の画像や低解像度でお試しください。');
-}
-
-/* ===== Blob→Base64（ヘッダ無し） ===== */
 function blobToBase64NoHeader(blob){
   return new Promise((resolve,reject)=>{
     const fr=new FileReader();
@@ -519,35 +493,6 @@ function blobToBase64NoHeader(blob){
     fr.readAsDataURL(blob);
   });
 }
-
-/* ===== 背景除去API（JSONで送信） ===== */
-async function removeBgByJson(file){
-  let jpegBlob;
-  try{
-    jpegBlob=await ensureJpegUnder4MB(file,4*1024*1024);
-  }catch(e){
-    if(file.size>4*1024*1024) throw e;
-    jpegBlob=file; // 4MB以下ならそのまま
-  }
-  const base64=await blobToBase64NoHeader(jpegBlob);
-
-  const r=await fetch('/api/remove-bg',{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({
-      filename:(file.name||'image').replace(/\.[^.]+$/,'')+'.jpg',
-      mime:'image/jpeg',
-      data:base64
-    })
-  });
-  if(!r.ok){
-    const t=await r.text().catch(()=> '');
-    throw new Error(`HTTP ${r.status}: ${t.slice(0,200)}`);
-  }
-  return await r.blob(); // PNG
-}
-
-/* ===== Blob→<img> ===== */
 function loadImageFromBlob(blob){
   return new Promise((resolve,reject)=>{
     const url=URL.createObjectURL(blob);
@@ -557,8 +502,6 @@ function loadImageFromBlob(blob){
     im.src=url;
   });
 }
-
-/* ===== 合成（単色背景＋中央フィット） ===== */
 function drawComposite(canvas,bgHex,subjectImg){
   const ctx=canvas.getContext('2d');
   const W=canvas.width,H=canvas.height;
@@ -573,8 +516,6 @@ function drawComposite(canvas,bgHex,subjectImg){
   ctx.drawImage(subjectImg,dx,dy,dw,dh);
   ctx.shadowBlur=0;
 }
-
-/* ===== ダウンロード ===== */
 function downloadCanvas(canvas, filename){
   const dataUrl=canvas.toDataURL('image/png');
   const isIOS=/iP(hone|ad|od)/.test(navigator.platform)||(navigator.userAgent.includes('Mac')&&'ontouchend'in document);
@@ -589,8 +530,28 @@ function downloadCanvas(canvas, filename){
     document.body.appendChild(a); a.click(); a.remove();
   }
 }
+async function removeBgByJson(file){
+  setUpMsg('画像を最適化中…');
+  const img=await fileToHTMLImage(file);
+  const jpegBlob=await canvasDownscaleToJpeg(img,1600,0.85);       // ←常に縮小
+  const base64=await blobToBase64NoHeader(jpegBlob);               // ←Base64（ヘッダ除去）
 
-/* ===== 入口：アップロード ===== */
+  setUpMsg('背景を削除中…（数秒）');
+  const r=await fetch('/api/remove-bg',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      filename:(file.name||'image').replace(/\.[^.]+$/,'')+'.jpg',
+      mime:'image/jpeg',
+      data:base64
+    })
+  });
+  if(!r.ok){
+    const t=await r.text().catch(()=> '');
+    throw new Error(`HTTP ${r.status}: ${t.slice(0,200)}`);
+  }
+  return await r.blob(); // ClipDrop からは PNG
+}
 const uploadEl=document.getElementById('upload');
 if(uploadEl){
   uploadEl.addEventListener('change', async (e)=>{
@@ -600,9 +561,9 @@ if(uploadEl){
     if(!hexes){ setUpMsg('先に診断を実行して、3色を確定してください。',true); return; }
 
     try{
-      setUpMsg('背景を削除中…（数秒かかります）');
-      const cutBlob=await removeBgByJson(file);         // PNG
-      const subject=await loadImageFromBlob(cutBlob);   // Image
+      setUpMsg('準備中…');
+      const cutBlob=await removeBgByJson(file);
+      const subject=await loadImageFromBlob(cutBlob);
 
       drawComposite(document.getElementById('cvMain'),hexes.main,subject);
       drawComposite(document.getElementById('cvSub') ,hexes.sub ,subject);
@@ -616,11 +577,9 @@ if(uploadEl){
     }
   });
 }
-
-/* ===== 単品ダウンロード ===== */
 document.getElementById('dlMain')?.addEventListener('click',()=>downloadCanvas(document.getElementById('cvMain'),'main.png'));
-document.getElementById('dlSub') ?.addEventListener('click',()=>downloadCanvas(document.getElementById('cvSub') ,'sub.png'));
-document.getElementById('dlAcc') ?.addEventListener('click',()=>downloadCanvas(document.getElementById('cvAcc') ,'accent.png'));
+document.getElementById('dlSub') ?.addEventListener('click',()=>downloadCanvas(document.getElementById('cvSub'),'sub.png'));
+document.getElementById('dlAcc') ?.addEventListener('click',()=>downloadCanvas(document.getElementById('cvAcc'),'accent.png'));
 </script>
 </body>
 </html>
