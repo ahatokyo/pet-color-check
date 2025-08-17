@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta http-equiv="Cache-Control" content="no-store" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>愛犬パーソナルカラー診断</title>
+<title>愛犬パーソナルカラー診断（デバッグ版）</title>
 <style>
   :root{--ink:#222;--muted:#667085;--bg:#f7f7f9;--panel:#fff;--brand:#2d9cdb}
   *{box-sizing:border-box}
@@ -46,36 +46,21 @@
   #photoSection .bar{height:4px;border-radius:4px;overflow:hidden;background:#eee;margin-top:8px;display:none}
   #photoSection .bar > i{display:block;height:100%;width:0;background:var(--brand);transition:width .2s}
   #photoSection .spin{display:none;margin-top:8px;font-size:13px;color:#555}
-  @media (max-width: 640px) {
-    .app{grid-template-columns:1fr;padding:10px}
-    .coat-grid{grid-template-columns:repeat(2,1fr);gap:10px}
-    .coat .chip{height:56px}
-    .coat .meta{font-size:12px;padding:5px 7px}
-    .coat .meta small{display:none}
-    .traits{grid-template-columns:1fr;gap:10px}
-    .traits-list label{padding:8px 10px}
-    .traits-list input[type="checkbox"]{transform:scale(1.25)}
-    .actions{flex-direction:column;gap:10px}
-    .btn{width:100%;padding:14px 16px;font-size:16px}
-    .swatches{grid-template-columns:1fr;gap:12px}
-    .sw .chip{height:84px}
-    .sw .meta{padding:10px 12px}
-    .rowsm code{font-size:12px}
-    body{font-size:16px}
-  }
-  .coat,.btn,.traits-list label{min-height:44px}
   .drop{margin-top:10px;border:1px dashed #c5ced6;border-radius:10px;padding:12px;color:#465a6c;background:#fafbfc}
   .drop.drag{background:#eef6fd;border-color:#8ccdf5}
+  /* 画面右下のデバッグパネル */
+  #dbg{position:fixed;right:10px;bottom:10px;max-width:38ch;background:#0b1020;color:#e5ecff;border:1px solid #304466;border-radius:10px;padding:8px 10px;font:12px/1.5 ui-monospace,monospace;z-index:9999;box-shadow:0 4px 14px rgba(0,0,0,.2)}
+  #dbg b{color:#9ad}
+  #dbg .small{opacity:.8}
 </style>
 </head>
 <body>
 <header>
-  <h1>愛犬パーソナルカラー診断</h1>
-  <div class="subtitle">合計27,000通りの毛色×性格の組み合わせから、愛犬に似合う3色を診断します</div>
+  <h1>愛犬パーソナルカラー診断（デバッグ版）</h1>
+  <div class="subtitle">問題の根本原因を特定するための一時版です</div>
 </header>
 
 <div class="app">
-  <!-- 入力 -->
   <section class="card">
     <h2>1) 愛犬の毛色を選択</h2>
     <p class="hint">1色のみ選択してください。(毛が2色の場合はメインの色を選択)</p>
@@ -97,7 +82,6 @@
     <div id="note" class="note">性格は1〜3つまで選択してください。</div>
   </section>
 
-  <!-- 結果 -->
   <section class="card">
     <h2>愛犬パーソナルカラー診断結果</h2>
     <p class="hint">メイン：毛色ベース / サブ：性格も加味 / アクセント：コントラスト重視</p>
@@ -109,10 +93,9 @@
   </section>
 </div>
 
-<!-- 写真プレビュー -->
 <section class="card" id="photoSection" style="margin:16px auto;max-width:1100px;">
   <h2>愛犬写真の背景除去＆3色プレビュー</h2>
-  <p class="hint">画像をアップロード/ドロップ/ペーストすると背景を自動除去し、診断の3色背景でプレビューできます</p>
+  <p class="hint">画像をアップロード/ドロップ/ペーストで試せます（この版はローカル処理のみ）</p>
 
   <input id="upload" type="file" accept="image/*" />
   <div class="drop" id="drop">ここに画像をドラッグ＆ドロップ、または画像を貼り付け（Ctrl/⌘+V）</div>
@@ -135,52 +118,85 @@
   </div>
 </section>
 
-<!-- ================== 診断ロジック ================== -->
+<!-- デバッグパネル -->
+<div id="dbg">
+  <div><b>Debug</b> <span class="small">(DevToolsの「⏸️例外で停止」をONに)</span></div>
+  <div id="dbglog"></div>
+</div>
+
 <script>
-/* ====== 70色・毛色・性格 ====== */
+/* ========= デバッグユーティリティ ========= */
+const DEBUG=true;
+const dbg=msg=>{
+  if(!DEBUG) return;
+  const el=document.getElementById('dbglog');
+  const line=document.createElement('div');
+  line.textContent = typeof msg==='string' ? msg : JSON.stringify(msg);
+  el.prepend(line); // 上に積む
+  console.log('[DBG]', msg);
+};
+const onceTrace = new Set();
+function traceOnce(tag){
+  if(onceTrace.has(tag)) return;
+  onceTrace.add(tag);
+  console.trace('trace:', tag);
+}
+const callGuard = (()=>{ // 短時間に同関数が異常回数呼ばれたら検知
+  const map=new Map();
+  let lastTick=0;
+  return function guard(tag, limit=5000){
+    const nowTick = Math.floor(performance.now()/50); // 50ms窓
+    if(nowTick!==lastTick){ map.clear(); lastTick=nowTick; }
+    const n=(map.get(tag)||0)+1; map.set(tag,n);
+    if(n>limit){ throw new Error('GuardTrip: suspicious recursion at '+tag); }
+  }
+})();
+
+// DOMに一切触らない「安全な」グローバルエラーハンドラ
+window.addEventListener('error', (e)=>{
+  console.error('GlobalError:', e.message, e.error);
+  dbg('GlobalError: '+e.message);
+  // DevToolsを開いていればここで停止
+  debugger;
+}, {capture:true});
+
+// Promise系
+window.addEventListener('unhandledrejection', (e)=>{
+  console.error('UnhandledRejection:', e.reason);
+  dbg('UnhandledRejection: '+(e.reason?.message||e.reason));
+  debugger;
+}, {capture:true});
+
+/* ========= カラーロジック（既存） ========= */
+// データ
 const PALETTE=[{hex:"#F5F5DC",cat:"ベージュ",tone:"ライト",name:"ベージュVL"},{hex:"#E4CDA7",cat:"ベージュ",tone:"ライト",name:"ベージュL"},{hex:"#D2B48C",cat:"ベージュ",tone:"ミドル",name:"タン"},{hex:"#C3A276",cat:"ベージュ",tone:"ダーク",name:"キャメル"},{hex:"#FFFF99",cat:"黄色",tone:"ライト",name:"ライトイエロー"},{hex:"#FFFF00",cat:"黄色",tone:"ミドル",name:"イエロー"},{hex:"#DFFF00",cat:"黄色",tone:"ミドル",name:"ライムイエロー"},{hex:"#FFEF00",cat:"黄色",tone:"ミドル",name:"カナリア"},{hex:"#FFD166",cat:"黄色",tone:"ミドル",name:"ハニー"},{hex:"#F2C94C",cat:"黄色",tone:"ミドル",name:"ゴールデン"},{hex:"#FFBF00",cat:"オレンジ",tone:"ミドル",name:"アンバー"},{hex:"#FF7F00",cat:"オレンジ",tone:"ミドル",name:"オレンジ"},{hex:"#FF6700",cat:"オレンジ",tone:"ミドル",name:"タンジェリン"},{hex:"#FF6347",cat:"オレンジ",tone:"ミドル",name:"トマト"},{hex:"#FADADD",cat:"ピンク",tone:"ライト",name:"ローズミスト"},{hex:"#FBCEB1",cat:"ピンク",tone:"ライト",name:"ピーチ"},{hex:"#FFA8A8",cat:"ピンク",tone:"ライト",name:"ベビーピンク"},{hex:"#F88379",cat:"ピンク",tone:"ミドル",name:"コーラル"},{hex:"#E07A5F",cat:"ピンク",tone:"ミドル",name:"テラコッタP"},{hex:"#FF69B4",cat:"ピンク",tone:"ミドル",name:"ホットピンク"},{hex:"#FF4F9A",cat:"ピンク",tone:"ミドル",name:"ビビッドピンク"},{hex:"#FF00FF",cat:"ピンク",tone:"ミドル",name:"マゼンタ"},{hex:"#FF1493",cat:"ピンク",tone:"ミドル",name:"ディープピンク"},{hex:"#C21E56",cat:"赤",tone:"ミドル",name:"ルビー"},{hex:"#D81B60",cat:"赤",tone:"ミドル",name:"ラズベリー"},{hex:"#FF0000",cat:"赤",tone:"ミドル",name:"レッド"},{hex:"#800020",cat:"赤",tone:"ダーク",name:"バーガンディ"},{hex:"#98FFCC",cat:"緑",tone:"ライト",name:"ミント"},{hex:"#93C572",cat:"緑",tone:"ライト",name:"ピスタチオ"},{hex:"#00FF7F",cat:"緑",tone:"ライト",name:"スプリングG"},{hex:"#00FF00",cat:"緑",tone:"ライト",name:"ライム"},{hex:"#4CBB17",cat:"緑",tone:"ライト",name:"ケリー"},{hex:"#00A550",cat:"緑",tone:"ライト",name:"エメラルド"},{hex:"#6B8E23",cat:"緑",tone:"ミドル",name:"オリーブドラブ"},{hex:"#228B22",cat:"緑",tone:"ミドル",name:"フォレスト"},{hex:"#556B2F",cat:"緑",tone:"ミドル",name:"ダークオリーブ"},{hex:"#4B5320",cat:"緑",tone:"ダーク",name:"アーミーG"},{hex:"#AFEEEE",cat:"青",tone:"ライト",name:"パウダーブルー"},{hex:"#ADD8E6",cat:"青",tone:"ライト",name:"ライトブルー"},{hex:"#00FFFF",cat:"青",tone:"ライト",name:"シアン"},{hex:"#2D9CDB",cat:"青",tone:"ライト",name:"スカイ"},{hex:"#4682B4",cat:"青",tone:"ミドル",name:"スチール"},{hex:"#2EC4B6",cat:"青",tone:"ミドル",name:"ターコイズ"},{hex:"#1B7F79",cat:"青",tone:"ミドル",name:"ティール"},{hex:"#2F5DCC",cat:"青",tone:"ミドル",name:"ロイヤル"},{hex:"#0047AB",cat:"青",tone:"ミドル",name:"コバルト"},{hex:"#0000FF",cat:"青",tone:"ミドル",name:"ブルー"},{hex:"#1F2A44",cat:"青",tone:"ダーク",name:"ミッドナイト"},{hex:"#191970",cat:"青",tone:"ダーク",name:"ネイビー"},{hex:"#CCCCFF",cat:"紫",tone:"ライト",name:"ペールラベンダー"},{hex:"#C8A2C8",cat:"紫",tone:"ライト",name:"ライラック"},{hex:"#B57EDC",cat:"紫",tone:"ミドル",name:"ラベンダー"},{hex:"#8E4585",cat:"紫",tone:"ミドル",name:"プラム"},{hex:"#8F00FF",cat:"紫",tone:"ミドル",name:"エレクトリックP"},{hex:"#4B0082",cat:"紫",tone:"ミドル",name:"インディゴ"},{hex:"#C19A6B",cat:"ブラウン",tone:"ライト",name:"ライトブラウン"},{hex:"#B6864D",cat:"ブラウン",tone:"ライト",name:"ミドルブラウン"},{hex:"#CD7F32",cat:"ブラウン",tone:"ミドル",name:"ブロンズ"},{hex:"#A0522D",cat:"ブラウン",tone:"ミドル",name:"セピア"},{hex:"#C04000",cat:"ブラウン",tone:"ダーク",name:"ラセット"},{hex:"#722F37",cat:"ブラウン",tone:"ダーク",name:"マルーンB"},{hex:"#483C32",cat:"ブラウン",tone:"ダーク",name:"ダークトープ"},{hex:"#D6D6D6",cat:"グレー",tone:"ライト",name:"ライトグレー"},{hex:"#A9A9A9",cat:"グレー",tone:"ライト",name:"ダークグレー(明)"},{hex:"#808080",cat:"グレー",tone:"ミドル",name:"グレー"},{hex:"#696969",cat:"グレー",tone:"ミドル",name:"ディムグレー"},{hex:"#708090",cat:"グレー",tone:"ミドル",name:"スレートグレー"},{hex:"#36454F",cat:"グレー",tone:"ダーク",name:"チャコール"},{hex:"#1E1E1E",cat:"グレー",tone:"ダーク",name:"ジェット"},{hex:"#000000",cat:"グレー",tone:"ダーク",name:"ブラック"}];
-
 const COATS=[["ホワイト","#FFFFFF"],["クリーム","#FFFDD0"],["フォーン","#C3A276"],["タン","#C49A6C"],["セーブル","#7B5B3E"],["アプリコット","#E6A571"],["イエロー","#FFD54F"],["ゴールド","#FFD700"],["レッド","#C04000"],["マホガニー","#722F37"],["マール","#7A92A6"],["ブルー","#5A7FA3"],["シルバー","#A9A9A9"],["ウルフセーブル","#8E8E86"],["グレー","#808080"],["ライトブラウン","#B6864D"],["ブラウン","#8B5A2B"],["ブリンドル","#5A4636"],["ダークチョコレート","#3A2C2A"],["ブラック","#000000"]];
-
 const TRAITS={intro:["繊細","慎重","警戒心が強い","寂しがり屋","おだやか","マイペース","独立心が強い","頑固"],neutral:["賢い","集中力が高い","クール","素直","好奇心旺盛","甘えん坊","順応性が高い"],extro:["勇敢","活発","お調子者","リーダー気質","社交的"]};
 
-/* ====== 色ユーティリティ ====== */
 const hexToRgb=h=>{const m=h.replace('#','');return{r:parseInt(m.slice(0,2),16),g:parseInt(m.slice(2,4),16),b:parseInt(m.slice(4,6),16)}};
 const rgbToHue=({r,g,b})=>{r/=255;g/=255;b/=255;const mx=Math.max(r,g,b),mn=Math.min(r,g,b),d=mx-mn;if(d===0)return 0;let h=mx===r?(g-b)/d:mx===g?(b-r)/d+2:(r-g)/d+4;return (h*60+360)%360};
 const hueOf=hex=>rgbToHue(hexToRgb(hex));
 const hueDist=(a,b)=>{const d=Math.abs(a-b)%360;return d>180?360-d:d};
-function rgbToXyz(r,g,b){
-  r/=255; g/=255; b/=255;
-  r = r>0.04045?((r+0.055)/1.055)**2.4:r/12.92;
-  g = g>0.04045?((g+0.055)/1.055)**2.4:g/12.92;
-  b = b>0.04045?((b+0.055)/1.055)**2.4:b/12.92;
-  const x=r*0.4124+g*0.3576+b*0.1805;
-  const y=r*0.2126+g*0.7152+b*0.0722;
-  const z=r*0.0193+g*0.1192+b*0.9505;
-  return{x:x*100,y:y*100,z:z*100}
+function rgbToXyz(r,g,b){ r/=255; g/=255; b/=255;
+  r=r>0.04045?((r+0.055)/1.055)**2.4:r/12.92;
+  g=g>0.04045?((g+0.055)/1.055)**2.4:g/12.92;
+  b=b>0.04045?((b+0.055)/1.055)**2.4:b/12.92;
+  const x=r*0.4124+g*0.3576+b*0.1805, y=r*0.2126+g*0.7152+b*0.0722, z=r*0.0193+g*0.1192+b*0.9505;
+  return {x:x*100,y:y*100,z:z*100}
 }
-function xyzToLab(x,y,z){
-  const xr=x/95.047, yr=y/100, zr=z/108.883;
-  const f=t=>t>0.008856?Math.cbrt(t):(7.787*t+16/116);
-  const fx=f(xr), fy=f(yr), fz=f(zr);
-  return{L:116*fy-16,a:500*(fx-fy),b:200*(fy-fz)}
-}
+function xyzToLab(x,y,z){const xr=x/95.047,yr=y/100,zr=z/108.883;const f=t=>t>0.008856?Math.cbrt(t):(7.787*t+16/116);const fx=f(xr),fy=f(yr),fz=f(zr);return{L:116*fy-16,a:500*(fx-fy),b:200*(fy-fz)}}
 const hexToLab=hex=>{const {r,g,b}=hexToRgb(hex);const {x,y,z}=rgbToXyz(r,g,b);return xyzToLab(x,y,z)};
 function labChroma(hex){const L=hexToLab(hex);return Math.hypot(L.a,L.b);}
-
-/* ====== センチメント ====== */
 const traitGroup={}; TRAITS.intro.forEach(t=>traitGroup[t]="内向"); TRAITS.neutral.forEach(t=>traitGroup[t]="中立"); TRAITS.extro.forEach(t=>traitGroup[t]="外交");
 function sentiment(traits){let s=0,n=0,e=0;traits.forEach(t=>{const g=traitGroup[t];if(g==="内向")s++;else if(g==="外交")e++;else n++;});if(e>=s&&e>=n)return"外交";if(s>=n&&s>=e)return"内向";return"中立"}
 const tonePrefWeight={内向:{ライト:1.0,ミドル:0.7,ダーク:0.3},中立:{ライト:0.7,ミドル:1.0,ダーク:0.7},外交:{ライト:0.4,ミドル:0.9,ダーク:1.0}};
 const TRAIT_HUE_TILT={"繊細":[330,285],"慎重":[30,210],"警戒心が強い":[30,210],"寂しがり屋":[330,270],"おだやか":[90,40],"マイペース":[40,210],"独立心が強い":[270,210],"頑固":[20,0],"賢い":[210,220],"集中力が高い":[210,200],"クール":[210,240],"素直":[120,60],"好奇心旺盛":[60,330],"甘えん坊":[330,300],"順応性が高い":[40,120],"勇敢":[0,30],"活発":[30,60],"お調子者":[60,330],"リーダー気質":[270,0],"社交的":[60,30]};
 function hueBiasScore(H,prefs){if(!prefs||!prefs.length)return 0;let best=0;prefs.forEach(h=>{const d=hueDist(H,h);best=Math.max(best,Math.exp(-(d*d)/(2*25*25)));});return best}
-
-/* ====== 乱数 ====== */
 function seedFrom(str){let h=2166136261>>>0;for(let i=0;i<str.length;i++){h^=str.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0}
 function rng(seed){let s=seed>>>0;return ()=>{s=(s*1664525+1013904223)>>>0;return (s&0xffff)/0x10000};}
-
-/* ====== 診断 ====== */
 function pickColors(coatName,traits){
+  callGuard('pickColors');
+  traceOnce('pickColors');
   const coatHex=(new Map(COATS)).get(coatName)||"#FFFFFF";
   const coatHue=hueOf(coatHex);
   const senti=sentiment(traits);
@@ -236,7 +252,7 @@ function pickColors(coatName,traits){
   return {main,sub,accent};
 }
 
-/* ====== UI描画 ====== */
+// UI描画
 const coatGrid=document.getElementById("coatGrid"); let selectedCoat=null;
 function renderCoats(){ coatGrid.innerHTML=""; COATS.forEach(([name,hex])=>{ const card=document.createElement("button"); card.type="button"; card.className="coat"; card.innerHTML=`<div class="chip" style="background:${hex}"></div><div class="meta"><span>${name}</span><small>${hex}</small></div>`; card.addEventListener("click",()=>{selectedCoat=name; document.querySelectorAll(".coat").forEach(c=>c.classList.remove("selected")); card.classList.add("selected");}); coatGrid.appendChild(card);});}
 renderCoats();
@@ -248,13 +264,8 @@ function setSw(prefix,color){ document.getElementById(prefix+"Chip").style.backg
 function run(){ const msg=document.getElementById("msg"); const traits=selectedTraits(); if(!selectedCoat){ msg.textContent="毛色を1つ選択してください。"; msg.style.display="block"; return;} if(traits.length===0){ msg.textContent="性格は1〜3つまで選択してください。"; msg.style.display="block"; return;} msg.style.display="none"; try{ const res=pickColors(selectedCoat,traits); setSw("main",res.main); setSw("sub",res.sub); setSw("acc",res.accent);}catch(e){ console.error(e); msg.textContent="エラー：内部データに不整合があります。"; msg.style.display="block"; }}
 document.getElementById("run").addEventListener("click",run);
 document.getElementById("reset").addEventListener("click",()=>{ selectedCoat=null; document.querySelectorAll(".coat").forEach(c=>c.classList.remove("selected")); document.querySelectorAll(".traits input[type=checkbox]").forEach(c=>c.checked=false); ["main","sub","acc"].forEach(k=>{ document.getElementById(k+"Chip").style.background="#fff"; document.getElementById(k+"Hex").textContent="—"; document.getElementById(k+"Name").textContent="—";}); document.getElementById("msg").style.display="none"; });
-</script>
 
-<!-- ============ 画像処理：ローカルのみ（超安全版） ============ -->
-<script>
-document.getElementById('file')?.remove();
-
-/*** 診断HEX ***/
+/* ========= 画像処理（ローカルのみ） ========= */
 function currentResultHexes(){
   const m=document.getElementById('mainHex')?.textContent.trim();
   const s=document.getElementById('subHex')?.textContent.trim();
@@ -262,12 +273,11 @@ function currentResultHexes(){
   if(!m||m==='—'||!s||s==='—'||!a||a==='—') return null;
   return {main:m,sub:s,acc:a};
 }
-
-/*** UIメッセージ（再入防止） ***/
 let _msgBusy=false;
 function setUpMsg(text,isErr=false){
-  if(_msgBusy) return;
-  _msgBusy=true;
+  callGuard('setUpMsg', 2000);
+  traceOnce('setUpMsg');
+  if(_msgBusy) return; _msgBusy=true;
   try{
     const el=document.getElementById('upMsg'); if(!el) return;
     el.style.display='block';
@@ -279,8 +289,9 @@ const bar=document.getElementById('bar'); const barI=bar?.querySelector('i'); co
 function prog(p){ if(!bar||!barI) return; bar.style.display='block'; barI.style.width=(Math.max(0,Math.min(100,Number(p)||0)))+'%'; }
 function spinOn(){ if(spin) spin.style.display='block'; } function spinOff(){ if(spin) spin.style.display='none'; if(bar) bar.style.display='none'; }
 
-/*** 画像縮小（最大辺1024px） ***/
 async function normalizeImageFile(file,maxSide=1024){
+  callGuard('normalizeImageFile');
+  traceOnce('normalizeImageFile');
   let bmp;
   try{ bmp=await createImageBitmap(file,{imageOrientation:'from-image',premultiplyAlpha:'premultiply'}); }
   catch{
@@ -290,15 +301,16 @@ async function normalizeImageFile(file,maxSide=1024){
   const scale=Math.min(1,maxSide/Math.max(bmp.width,bmp.height));
   if(scale===1) return file;
   const w=Math.round(bmp.width*scale),h=Math.round(bmp.height*scale);
-  const cv=self.OffscreenCanvas?new OffscreenCanvas(w,h):document.createElement('canvas'); if(!(cv instanceof OffscreenCanvas)){cv.width=w; cv.height=h;}
-  const ctx=(cv instanceof OffscreenCanvas?cv.getContext('2d'):cv.getContext('2d')); ctx.imageSmoothingQuality='high';
+  const cv=document.createElement('canvas'); cv.width=w; cv.height=h;
+  const ctx=cv.getContext('2d'); ctx.imageSmoothingQuality='high';
   ctx.drawImage(bmp,0,0,w,h);
-  const blob=await (cv.convertToBlob?cv.convertToBlob({type:'image/jpeg',quality:0.92}):new Promise(r=>cv.toBlob(r,'image/jpeg',0.92)));
+  const blob=await new Promise(r=>cv.toBlob(r,'image/jpeg',0.92));
   return new File([blob],'image.jpg',{type:'image/jpeg',lastModified:Date.now()});
 }
 
-/*** ローカル簡易切り抜き ***/
 async function localQuickMatting(fileOrImage){
+  callGuard('localQuickMatting');
+  traceOnce('localQuickMatting');
   const img = fileOrImage instanceof HTMLImageElement ? fileOrImage :
     await (async()=>{const u=URL.createObjectURL(fileOrImage); const im=new Image(); await new Promise((res,rej)=>{im.onload=()=>{URL.revokeObjectURL(u);res()}; im.onerror=e=>{URL.revokeObjectURL(u);rej(e)}; im.src=u}); return im})();
   const maxSide=1024, s=Math.min(1,maxSide/Math.max(img.width,img.height));
@@ -325,8 +337,8 @@ async function localQuickMatting(fileOrImage){
   return blob;
 }
 
-/*** 合成 & DL ***/
 function drawComposite(canvas,bgHex,img){
+  callGuard('drawComposite', 20000);
   const ctx=canvas.getContext('2d'), W=canvas.width,H=canvas.height;
   ctx.clearRect(0,0,W,H); ctx.fillStyle=bgHex; ctx.fillRect(0,0,W,H);
   const pad=.05,maxW=W*(1-2*pad),maxH=H*(1-2*pad);
@@ -335,36 +347,39 @@ function drawComposite(canvas,bgHex,img){
   ctx.shadowColor='rgba(0,0,0,.15)'; ctx.shadowBlur=Math.round(W*.02);
   ctx.drawImage(img,dx,dy,dw,dh); ctx.shadowBlur=0;
 }
+
 function downloadCanvas(c,fn){ const url=c.toDataURL('image/png'); const iOS=/iP(hone|ad|od)/.test(navigator.platform)||(navigator.userAgent.includes('Mac')&&'ontouchend' in document); if(iOS){const w=window.open(); if(!w) return; w.document.write('<html><head><title>長押しで保存</title></head><body style="margin:0">'); w.document.write(`<img src="${url}" style="width:100%;height:auto;display:block">`); w.document.write('</body></html>'); w.document.close();}else{const a=document.createElement('a'); a.href=url; a.download=fn; document.body.appendChild(a); a.click(); a.remove();}}
 
-/*** メイン処理（ローカルのみ） ***/
 async function processAndPreview(file){
+  callGuard('processAndPreview');
+  traceOnce('processAndPreview');
   const hexes=currentResultHexes();
   if(!hexes){ setUpMsg('先に診断を実行して、3色を確定してください。',true); return; }
   if(!/^image\//i.test(file.type)){ setUpMsg('画像ファイルを選択してください。',true); return; }
   if(file.size>25*1024*1024){ setUpMsg('画像が大きすぎます（25MB以下推奨）',true); return; }
 
   try{
-    setUpMsg('背景を削除中…'); prog(3); spinOn();
-    const normalized=await normalizeImageFile(file,1024); prog(20);
-    const cutBlob=await localQuickMatting(normalized); prog(80);
-    const subject=await (async()=>{const u=URL.createObjectURL(cutBlob); const im=new Image(); await new Promise((res,rej)=>{im.onload=()=>{URL.revokeObjectURL(u);res()}; im.onerror=e=>{URL.revokeObjectURL(u);rej(e)}; im.src=u}); return im})();
-    prog(90);
+    setUpMsg('背景を削除中…'); document.getElementById('bar').style.display='block';
+    const normalized=await normalizeImageFile(file,1024);
+    const cutBlob=await localQuickMatting(normalized);
+    const u=URL.createObjectURL(cutBlob); const subject=new Image();
+    await new Promise((res,rej)=>{subject.onload=()=>{URL.revokeObjectURL(u);res()}; subject.onerror=e=>{URL.revokeObjectURL(u);rej(e)}; subject.src=u;});
     drawComposite(document.getElementById('cvMain'),hexes.main,subject);
     drawComposite(document.getElementById('cvSub'), hexes.sub ,subject);
     drawComposite(document.getElementById('cvAcc'), hexes.acc ,subject);
-    prog(100);
     document.getElementById('previewArea').style.display='block';
     setUpMsg('プレビューを表示しました。各ボタンから保存できます。');
   }catch(err){
-    setUpMsg('背景除去に失敗しました： '+(err?.message||String(err)).slice(0,300), true);
+    console.error(err);
+    dbg('process error: '+(err?.message||String(err)));
+    setUpMsg('背景除去に失敗しました： '+(err?.message || String(err)).slice(0,300), true);
+    debugger; // ここでも停止
   }finally{
-    spinOff(); prog(0);
-    setTimeout(()=>{const el=document.getElementById('upMsg'); if(el) el.style.display='none';},7000);
+    document.getElementById('bar').style.display='none';
   }
 }
 
-/*** 入力UI（ファイル/ドロップ/ペースト） ***/
+/* 入力UI */
 document.getElementById('upload')?.addEventListener('change',e=>{
   const f=e.target.files?.[0]; if(f) processAndPreview(f);
 });
@@ -379,8 +394,6 @@ window.addEventListener('paste',e=>{
   const it=[...(e.clipboardData?.items||[])].find(i=>/^image\//.test(i.type));
   if(it){ const f=it.getAsFile(); if(f) processAndPreview(f); }
 });
-
-/*** ダウンロードボタン ***/
 document.getElementById('dlMain')?.addEventListener('click',()=>downloadCanvas(document.getElementById('cvMain'),'main.png'));
 document.getElementById('dlSub') ?.addEventListener('click',()=>downloadCanvas(document.getElementById('cvSub') ,'sub.png'));
 document.getElementById('dlAcc') ?.addEventListener('click',()=>downloadCanvas(document.getElementById('cvAcc') ,'accent.png'));
