@@ -66,7 +66,6 @@
   .coat,.btn,.traits-list label{min-height:44px}
   .drop{margin-top:10px;border:1px dashed #c5ced6;border-radius:10px;padding:12px;color:#465a6c;background:#fafbfc}
   .drop.drag{background:#eef6fd;border-color:#8ccdf5}
-  .tog{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:13px;color:#475569}
 </style>
 </head>
 <body>
@@ -76,6 +75,7 @@
 </header>
 
 <div class="app">
+  <!-- 入力 -->
   <section class="card">
     <h2>1) 愛犬の毛色を選択</h2>
     <p class="hint">1色のみ選択してください。(毛が2色の場合はメインの色を選択)</p>
@@ -97,6 +97,7 @@
     <div id="note" class="note">性格は1〜3つまで選択してください。</div>
   </section>
 
+  <!-- 結果 -->
   <section class="card">
     <h2>愛犬パーソナルカラー診断結果</h2>
     <p class="hint">メイン：毛色ベース / サブ：性格も加味 / アクセント：コントラスト重視</p>
@@ -108,12 +109,12 @@
   </section>
 </div>
 
+<!-- 写真プレビュー -->
 <section class="card" id="photoSection" style="margin:16px auto;max-width:1100px;">
   <h2>愛犬写真の背景除去＆3色プレビュー</h2>
-  <p class="hint">画像をアップロード/ドロップ/ペーストすると背景を自動除去し、診断の3色背景でプレビューします</p>
+  <p class="hint">画像をアップロード/ドロップ/ペーストすると背景を自動除去し、診断の3色背景でプレビューできます</p>
 
   <input id="upload" type="file" accept="image/*" />
-  <div class="tog"><label><input type="checkbox" id="useServer"> サーバーで高精度切り抜きを使う（失敗時は自動フォールバック）</label></div>
   <div class="drop" id="drop">ここに画像をドラッグ＆ドロップ、または画像を貼り付け（Ctrl/⌘+V）</div>
 
   <div id="upMsg" class="note" style="margin-top:8px;display:none;"></div>
@@ -136,7 +137,7 @@
 
 <!-- ================== 診断ロジック ================== -->
 <script>
-/* ====== データ ====== */
+/* ====== 70色・毛色・性格 ====== */
 const PALETTE=[{hex:"#F5F5DC",cat:"ベージュ",tone:"ライト",name:"ベージュVL"},{hex:"#E4CDA7",cat:"ベージュ",tone:"ライト",name:"ベージュL"},{hex:"#D2B48C",cat:"ベージュ",tone:"ミドル",name:"タン"},{hex:"#C3A276",cat:"ベージュ",tone:"ダーク",name:"キャメル"},{hex:"#FFFF99",cat:"黄色",tone:"ライト",name:"ライトイエロー"},{hex:"#FFFF00",cat:"黄色",tone:"ミドル",name:"イエロー"},{hex:"#DFFF00",cat:"黄色",tone:"ミドル",name:"ライムイエロー"},{hex:"#FFEF00",cat:"黄色",tone:"ミドル",name:"カナリア"},{hex:"#FFD166",cat:"黄色",tone:"ミドル",name:"ハニー"},{hex:"#F2C94C",cat:"黄色",tone:"ミドル",name:"ゴールデン"},{hex:"#FFBF00",cat:"オレンジ",tone:"ミドル",name:"アンバー"},{hex:"#FF7F00",cat:"オレンジ",tone:"ミドル",name:"オレンジ"},{hex:"#FF6700",cat:"オレンジ",tone:"ミドル",name:"タンジェリン"},{hex:"#FF6347",cat:"オレンジ",tone:"ミドル",name:"トマト"},{hex:"#FADADD",cat:"ピンク",tone:"ライト",name:"ローズミスト"},{hex:"#FBCEB1",cat:"ピンク",tone:"ライト",name:"ピーチ"},{hex:"#FFA8A8",cat:"ピンク",tone:"ライト",name:"ベビーピンク"},{hex:"#F88379",cat:"ピンク",tone:"ミドル",name:"コーラル"},{hex:"#E07A5F",cat:"ピンク",tone:"ミドル",name:"テラコッタP"},{hex:"#FF69B4",cat:"ピンク",tone:"ミドル",name:"ホットピンク"},{hex:"#FF4F9A",cat:"ピンク",tone:"ミドル",name:"ビビッドピンク"},{hex:"#FF00FF",cat:"ピンク",tone:"ミドル",name:"マゼンタ"},{hex:"#FF1493",cat:"ピンク",tone:"ミドル",name:"ディープピンク"},{hex:"#C21E56",cat:"赤",tone:"ミドル",name:"ルビー"},{hex:"#D81B60",cat:"赤",tone:"ミドル",name:"ラズベリー"},{hex:"#FF0000",cat:"赤",tone:"ミドル",name:"レッド"},{hex:"#800020",cat:"赤",tone:"ダーク",name:"バーガンディ"},{hex:"#98FFCC",cat:"緑",tone:"ライト",name:"ミント"},{hex:"#93C572",cat:"緑",tone:"ライト",name:"ピスタチオ"},{hex:"#00FF7F",cat:"緑",tone:"ライト",name:"スプリングG"},{hex:"#00FF00",cat:"緑",tone:"ライト",name:"ライム"},{hex:"#4CBB17",cat:"緑",tone:"ライト",name:"ケリー"},{hex:"#00A550",cat:"緑",tone:"ライト",name:"エメラルド"},{hex:"#6B8E23",cat:"緑",tone:"ミドル",name:"オリーブドラブ"},{hex:"#228B22",cat:"緑",tone:"ミドル",name:"フォレスト"},{hex:"#556B2F",cat:"緑",tone:"ミドル",name:"ダークオリーブ"},{hex:"#4B5320",cat:"緑",tone:"ダーク",name:"アーミーG"},{hex:"#AFEEEE",cat:"青",tone:"ライト",name:"パウダーブルー"},{hex:"#ADD8E6",cat:"青",tone:"ライト",name:"ライトブルー"},{hex:"#00FFFF",cat:"青",tone:"ライト",name:"シアン"},{hex:"#2D9CDB",cat:"青",tone:"ライト",name:"スカイ"},{hex:"#4682B4",cat:"青",tone:"ミドル",name:"スチール"},{hex:"#2EC4B6",cat:"青",tone:"ミドル",name:"ターコイズ"},{hex:"#1B7F79",cat:"青",tone:"ミドル",name:"ティール"},{hex:"#2F5DCC",cat:"青",tone:"ミドル",name:"ロイヤル"},{hex:"#0047AB",cat:"青",tone:"ミドル",name:"コバルト"},{hex:"#0000FF",cat:"青",tone:"ミドル",name:"ブルー"},{hex:"#1F2A44",cat:"青",tone:"ダーク",name:"ミッドナイト"},{hex:"#191970",cat:"青",tone:"ダーク",name:"ネイビー"},{hex:"#CCCCFF",cat:"紫",tone:"ライト",name:"ペールラベンダー"},{hex:"#C8A2C8",cat:"紫",tone:"ライト",name:"ライラック"},{hex:"#B57EDC",cat:"紫",tone:"ミドル",name:"ラベンダー"},{hex:"#8E4585",cat:"紫",tone:"ミドル",name:"プラム"},{hex:"#8F00FF",cat:"紫",tone:"ミドル",name:"エレクトリックP"},{hex:"#4B0082",cat:"紫",tone:"ミドル",name:"インディゴ"},{hex:"#C19A6B",cat:"ブラウン",tone:"ライト",name:"ライトブラウン"},{hex:"#B6864D",cat:"ブラウン",tone:"ライト",name:"ミドルブラウン"},{hex:"#CD7F32",cat:"ブラウン",tone:"ミドル",name:"ブロンズ"},{hex:"#A0522D",cat:"ブラウン",tone:"ミドル",name:"セピア"},{hex:"#C04000",cat:"ブラウン",tone:"ダーク",name:"ラセット"},{hex:"#722F37",cat:"ブラウン",tone:"ダーク",name:"マルーンB"},{hex:"#483C32",cat:"ブラウン",tone:"ダーク",name:"ダークトープ"},{hex:"#D6D6D6",cat:"グレー",tone:"ライト",name:"ライトグレー"},{hex:"#A9A9A9",cat:"グレー",tone:"ライト",name:"ダークグレー(明)"},{hex:"#808080",cat:"グレー",tone:"ミドル",name:"グレー"},{hex:"#696969",cat:"グレー",tone:"ミドル",name:"ディムグレー"},{hex:"#708090",cat:"グレー",tone:"ミドル",name:"スレートグレー"},{hex:"#36454F",cat:"グレー",tone:"ダーク",name:"チャコール"},{hex:"#1E1E1E",cat:"グレー",tone:"ダーク",name:"ジェット"},{hex:"#000000",cat:"グレー",tone:"ダーク",name:"ブラック"}];
 
 const COATS=[["ホワイト","#FFFFFF"],["クリーム","#FFFDD0"],["フォーン","#C3A276"],["タン","#C49A6C"],["セーブル","#7B5B3E"],["アプリコット","#E6A571"],["イエロー","#FFD54F"],["ゴールド","#FFD700"],["レッド","#C04000"],["マホガニー","#722F37"],["マール","#7A92A6"],["ブルー","#5A7FA3"],["シルバー","#A9A9A9"],["ウルフセーブル","#8E8E86"],["グレー","#808080"],["ライトブラウン","#B6864D"],["ブラウン","#8B5A2B"],["ブリンドル","#5A4636"],["ダークチョコレート","#3A2C2A"],["ブラック","#000000"]];
@@ -148,8 +149,22 @@ const hexToRgb=h=>{const m=h.replace('#','');return{r:parseInt(m.slice(0,2),16),
 const rgbToHue=({r,g,b})=>{r/=255;g/=255;b/=255;const mx=Math.max(r,g,b),mn=Math.min(r,g,b),d=mx-mn;if(d===0)return 0;let h=mx===r?(g-b)/d:mx===g?(b-r)/d+2:(r-g)/d+4;return (h*60+360)%360};
 const hueOf=hex=>rgbToHue(hexToRgb(hex));
 const hueDist=(a,b)=>{const d=Math.abs(a-b)%360;return d>180?360-d:d};
-function rgbToXyz(r,g,b){r/=255;g/=255;b/=255;r=r>0.04045?((r+0.055)/1.055)**2.4:r/12.92;g=g>0.04045?((g+0.055)/1.055)**2.4:g/12.92;b=b>0.04045?((b+0.055)/1.055)**2.4;b/=1;const x=r*0.4124+g*0.3576+(b*0.1805);const y=r*0.2126+g*0.7152+(b*0.0722);const z=r*0.0193+g*0.1192+(b*0.9505);return{x:x*100,y:y*100,z:z*100}}
-function xyzToLab(x,y,z){const xr=x/95.047,yr=y/100,zr=z/108.883;const f=t=>t>0.008856?Math.cbrt(t):(7.787*t+16/116);const fx=f(xr),fy=f(yr),fz=f(zr);return{L:116*fy-16,a:500*(fx-fy),b:200*(fy-fz)}}
+function rgbToXyz(r,g,b){
+  r/=255; g/=255; b/=255;
+  r = r>0.04045?((r+0.055)/1.055)**2.4:r/12.92;
+  g = g>0.04045?((g+0.055)/1.055)**2.4:g/12.92;
+  b = b>0.04045?((b+0.055)/1.055)**2.4:b/12.92;
+  const x=r*0.4124+g*0.3576+b*0.1805;
+  const y=r*0.2126+g*0.7152+b*0.0722;
+  const z=r*0.0193+g*0.1192+b*0.9505;
+  return{x:x*100,y:y*100,z:z*100}
+}
+function xyzToLab(x,y,z){
+  const xr=x/95.047, yr=y/100, zr=z/108.883;
+  const f=t=>t>0.008856?Math.cbrt(t):(7.787*t+16/116);
+  const fx=f(xr), fy=f(yr), fz=f(zr);
+  return{L:116*fy-16,a:500*(fx-fy),b:200*(fy-fz)}
+}
 const hexToLab=hex=>{const {r,g,b}=hexToRgb(hex);const {x,y,z}=rgbToXyz(r,g,b);return xyzToLab(x,y,z)};
 function labChroma(hex){const L=hexToLab(hex);return Math.hypot(L.a,L.b);}
 
@@ -235,9 +250,8 @@ document.getElementById("run").addEventListener("click",run);
 document.getElementById("reset").addEventListener("click",()=>{ selectedCoat=null; document.querySelectorAll(".coat").forEach(c=>c.classList.remove("selected")); document.querySelectorAll(".traits input[type=checkbox]").forEach(c=>c.checked=false); ["main","sub","acc"].forEach(k=>{ document.getElementById(k+"Chip").style.background="#fff"; document.getElementById(k+"Hex").textContent="—"; document.getElementById(k+"Name").textContent="—";}); document.getElementById("msg").style.display="none"; });
 </script>
 
-<!-- ============ 画像処理：ローカル優先（安全化） ============ -->
+<!-- ============ 画像処理：ローカルのみ（超安全版） ============ -->
 <script>
-/* 古い #file 要素があれば除去（保険） */
 document.getElementById('file')?.remove();
 
 /*** 診断HEX ***/
@@ -249,99 +263,45 @@ function currentResultHexes(){
   return {main:m,sub:s,acc:a};
 }
 
-/*** UIヘルパ（再入防止＆長文カット） ***/
-let _updatingMsg=false;
+/*** UIメッセージ（再入防止） ***/
+let _msgBusy=false;
 function setUpMsg(text,isErr=false){
-  if(_updatingMsg) return;
-  _updatingMsg=true;
+  if(_msgBusy) return;
+  _msgBusy=true;
   try{
-    const el=document.getElementById('upMsg');
-    if(!el) return;
+    const el=document.getElementById('upMsg'); if(!el) return;
     el.style.display='block';
     el.style.color=isErr?'#b00020':'#b26b00';
-    const s=String(text||'');
-    el.textContent=s.length>400? s.slice(0,400)+'…' : s;
-  }catch(_e){ /* swallow */ }
-  finally{ _updatingMsg=false; }
+    const s=String(text||''); el.textContent=s.length>400? s.slice(0,400)+'…' : s;
+  }finally{ _msgBusy=false; }
 }
 const bar=document.getElementById('bar'); const barI=bar?.querySelector('i'); const spin=document.getElementById('spin');
 function prog(p){ if(!bar||!barI) return; bar.style.display='block'; barI.style.width=(Math.max(0,Math.min(100,Number(p)||0)))+'%'; }
-function spinOn(){ if(spin) spin.style.display='block'; }
-function spinOff(){ if(spin) spin.style.display='none'; if(bar) bar.style.display='none'; }
+function spinOn(){ if(spin) spin.style.display='block'; } function spinOff(){ if(spin) spin.style.display='none'; if(bar) bar.style.display='none'; }
 
-/*** 画像縮小（EXIF対応） ***/
-async function normalizeImageFile(file,maxSide=1800){
+/*** 画像縮小（最大辺1024px） ***/
+async function normalizeImageFile(file,maxSide=1024){
   let bmp;
   try{ bmp=await createImageBitmap(file,{imageOrientation:'from-image',premultiplyAlpha:'premultiply'}); }
   catch{
     const u=URL.createObjectURL(file);
-    bmp=await new Promise((res,rej)=>{ const im=new Image(); im.onload=()=>{URL.revokeObjectURL(u);res(im)}; im.onerror=e=>{URL.revokeObjectURL(u);rej(e)}; im.src=u; });
+    bmp=await new Promise((res,rej)=>{const im=new Image(); im.onload=()=>{URL.revokeObjectURL(u);res(im)}; im.onerror=e=>{URL.revokeObjectURL(u);rej(e)}; im.src=u;});
   }
   const scale=Math.min(1,maxSide/Math.max(bmp.width,bmp.height));
   if(scale===1) return file;
   const w=Math.round(bmp.width*scale),h=Math.round(bmp.height*scale);
-  const cv=document.createElement('canvas'); cv.width=w; cv.height=h;
-  const ctx=cv.getContext('2d',{alpha:true,desynchronized:true}); ctx.imageSmoothingQuality='high';
+  const cv=self.OffscreenCanvas?new OffscreenCanvas(w,h):document.createElement('canvas'); if(!(cv instanceof OffscreenCanvas)){cv.width=w; cv.height=h;}
+  const ctx=(cv instanceof OffscreenCanvas?cv.getContext('2d'):cv.getContext('2d')); ctx.imageSmoothingQuality='high';
   ctx.drawImage(bmp,0,0,w,h);
-  const blob=await new Promise(r=>cv.toBlob(r,'image/jpeg',0.92));
-  return new File([blob],(file.name||'image')+'.jpg',{type:'image/jpeg',lastModified:Date.now()});
+  const blob=await (cv.convertToBlob?cv.convertToBlob({type:'image/jpeg',quality:0.92}):new Promise(r=>cv.toBlob(r,'image/jpeg',0.92)));
+  return new File([blob],'image.jpg',{type:'image/jpeg',lastModified:Date.now()});
 }
 
-/*** dataURL→Blob ***/
-function dataURLtoBlob(dataUrl){
-  const [h,b]=dataUrl.split(','); const mime=(h.match(/data:(.*?);/)||[])[1]||'image/png';
-  const bin=atob(b); const u8=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) u8[i]=bin.charCodeAt(i);
-  return new Blob([u8],{type:mime});
-}
-
-/*** Blob→Image（非画像チェック） ***/
-async function blobToImageOrThrow(blob){
-  if(blob.type && !blob.type.startsWith('image/')){
-    const t=await blob.text().catch(()=> ''); throw new Error(`非画像レスポンス: ${blob.type} / ${t.slice(0,300)}`);
-  }
-  return new Promise((res,rej)=>{ const u=URL.createObjectURL(blob); const im=new Image(); im.onload=()=>{URL.revokeObjectURL(u);res(im)}; im.onerror=e=>{URL.revokeObjectURL(u);rej(e)}; im.src=u; });
-}
-
-/*** fetch timeout ***/
-async function fetchWithTimeout(url,opts={},ms=15000){
-  const c=new AbortController(); const id=setTimeout(()=>c.abort(),ms);
-  try{ return await fetch(url,{...opts,signal:c.signal}); } finally{ clearTimeout(id); }
-}
-
-/*** サーバー切り抜き（必要な場合のみ） */
-async function serverRemoveBg(file){
-  const attempts=[
-    async()=>{const fd=new FormData(); fd.append('file',file,file.name||'image.jpg'); return {desc:'multipart[file]',res:await fetchWithTimeout('/api/remove-bg',{method:'POST',body:fd})}},
-    async()=>{const fd=new FormData(); fd.append('image',file,file.name||'image.jpg'); return {desc:'multipart[image]',res:await fetchWithTimeout('/api/remove-bg',{method:'POST',body:fd})}},
-    async()=>{const b64=await new Promise((r,j)=>{const fr=new FileReader(); fr.onload=()=>{try{const s=String(fr.result||''); r(s.split(',')[1]||'');}catch(e){j(e)}}; fr.onerror=j; fr.readAsDataURL(file);}); return {desc:'json{data}',res:await fetchWithTimeout('/api/remove-bg',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({filename:file.name||'image.jpg',mime:file.type||'image/jpeg',data:b64})})}},
-    async()=>{const b64=await new Promise((r,j)=>{const fr=new FileReader(); fr.onload=()=>{try{const s=String(fr.result||''); r(s.split(',')[1]||'');}catch(e){j(e)}}; fr.onerror=j; fr.readAsDataURL(file);}); return {desc:'json{image_b64}',res:await fetchWithTimeout('/api/remove-bg',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({image_b64:b64})})}},
-    async()=>{const dataUrl=await new Promise((r,j)=>{const fr=new FileReader(); fr.onload=()=>r(String(fr.result||'')); fr.onerror=j; fr.readAsDataURL(file);}); return {desc:'json{image:dataURL}',res:await fetchWithTimeout('/api/remove-bg',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({image:dataURL})})}}
-  ];
-  const errs=[];
-  for(const go of attempts){
-    try{
-      const {desc,res}=await go();
-      if(!res.ok){ errs.push(`${desc} -> HTTP ${res.status} ${await res.text().catch(()=> '')}`); continue; }
-      const ct=(res.headers.get('Content-Type')||'').toLowerCase();
-      if(ct.startsWith('image/')) return await res.blob();
-      if(ct.includes('application/json')){
-        const j=await res.json();
-        if(j.url){ const ir=await fetchWithTimeout(j.url); if(!ir.ok) throw new Error(`URL取得失敗 ${ir.status}`); return await ir.blob(); }
-        if(j.pngBase64||j.base64||j.image_b64){ return dataURLtoBlob(`data:image/png;base64,${j.pngBase64||j.base64||j.image_b64}`); }
-        if(j.dataUrl||j.dataURL){ return dataURLtoBlob(j.dataUrl||j.dataURL); }
-        throw new Error(`未知JSON: ${Object.keys(j).join(',')}`);
-      }
-      throw new Error(`${desc} -> 非画像レスポンス ${ct} : ${(await res.text().catch(()=> '')).slice(0,200)}`);
-    }catch(e){ errs.push(String(e).slice(0,200)); }
-  }
-  throw new Error('サーバ切り抜き失敗:\n'+errs.join('\n'));
-}
-
-/*** ローカル簡易切り抜き（背景色推定→しきい値＋フェザー） */
+/*** ローカル簡易切り抜き ***/
 async function localQuickMatting(fileOrImage){
   const img = fileOrImage instanceof HTMLImageElement ? fileOrImage :
     await (async()=>{const u=URL.createObjectURL(fileOrImage); const im=new Image(); await new Promise((res,rej)=>{im.onload=()=>{URL.revokeObjectURL(u);res()}; im.onerror=e=>{URL.revokeObjectURL(u);rej(e)}; im.src=u}); return im})();
-  const maxSide=1400, s=Math.min(1,maxSide/Math.max(img.width,img.height));
+  const maxSide=1024, s=Math.min(1,maxSide/Math.max(img.width,img.height));
   const W=Math.round(img.width*s),H=Math.round(img.height*s);
   const cv=document.createElement('canvas'); cv.width=W; cv.height=H;
   const ctx=cv.getContext('2d'); ctx.imageSmoothingQuality='high';
@@ -377,7 +337,7 @@ function drawComposite(canvas,bgHex,img){
 }
 function downloadCanvas(c,fn){ const url=c.toDataURL('image/png'); const iOS=/iP(hone|ad|od)/.test(navigator.platform)||(navigator.userAgent.includes('Mac')&&'ontouchend' in document); if(iOS){const w=window.open(); if(!w) return; w.document.write('<html><head><title>長押しで保存</title></head><body style="margin:0">'); w.document.write(`<img src="${url}" style="width:100%;height:auto;display:block">`); w.document.write('</body></html>'); w.document.close();}else{const a=document.createElement('a'); a.href=url; a.download=fn; document.body.appendChild(a); a.click(); a.remove();}}
 
-/*** メイン処理（ローカル優先。サーバーはチェックON時のみ） ***/
+/*** メイン処理（ローカルのみ） ***/
 async function processAndPreview(file){
   const hexes=currentResultHexes();
   if(!hexes){ setUpMsg('先に診断を実行して、3色を確定してください。',true); return; }
@@ -386,41 +346,21 @@ async function processAndPreview(file){
 
   try{
     setUpMsg('背景を削除中…'); prog(3); spinOn();
-    const normalized=await normalizeImageFile(file,1800); prog(12);
-
-    let cutBlob;
-    const useServer=document.getElementById('useServer')?.checked;
-
-    if(useServer){
-      try{
-        setUpMsg('サーバーで切り抜き中…'); prog(20);
-        cutBlob=await serverRemoveBg(normalized);
-      }catch(e){
-        console.warn('server failed, fallback to local', e);
-        setUpMsg('サーバー切り抜きに失敗 → ローカルで代替処理中'); prog(30);
-        cutBlob=await localQuickMatting(normalized);
-      }
-    }else{
-      setUpMsg('ローカルで切り抜き処理中…'); prog(25);
-      cutBlob=await localQuickMatting(normalized);
-    }
-
-    prog(75);
-    const subject=await blobToImageOrThrow(cutBlob); prog(85);
-
+    const normalized=await normalizeImageFile(file,1024); prog(20);
+    const cutBlob=await localQuickMatting(normalized); prog(80);
+    const subject=await (async()=>{const u=URL.createObjectURL(cutBlob); const im=new Image(); await new Promise((res,rej)=>{im.onload=()=>{URL.revokeObjectURL(u);res()}; im.onerror=e=>{URL.revokeObjectURL(u);rej(e)}; im.src=u}); return im})();
+    prog(90);
     drawComposite(document.getElementById('cvMain'),hexes.main,subject);
     drawComposite(document.getElementById('cvSub'), hexes.sub ,subject);
     drawComposite(document.getElementById('cvAcc'), hexes.acc ,subject);
     prog(100);
-
     document.getElementById('previewArea').style.display='block';
     setUpMsg('プレビューを表示しました。各ボタンから保存できます。');
   }catch(err){
-    console.error(err);
-    setUpMsg('背景除去に失敗しました： '+(err?.message || String(err)).slice(0,300), true);
+    setUpMsg('背景除去に失敗しました： '+(err?.message||String(err)).slice(0,300), true);
   }finally{
     spinOff(); prog(0);
-    setTimeout(()=>{ const el=document.getElementById('upMsg'); if(el) el.style.display='none'; }, 7000);
+    setTimeout(()=>{const el=document.getElementById('upMsg'); if(el) el.style.display='none';},7000);
   }
 }
 
