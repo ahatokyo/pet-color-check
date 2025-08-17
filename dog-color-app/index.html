@@ -1,8 +1,8 @@
 <!doctype html>
 <html lang="ja">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>愛犬パーソナルカラー診断</title>
 <style>
   :root{--ink:#222;--muted:#667085;--bg:#f7f7f9;--panel:#fff;--brand:#2d9cdb}
@@ -43,30 +43,36 @@
   .rowsm{display:flex;justify-content:space-between;align-items:center;margin-top:2px}
   .rowsm code{background:#f2f4f7;border-radius:6px;padding:2px 6px}
   .badge{display:none}
+
+  /* preview section */
+  #photoSection .bar{height:4px;border-radius:4px;overflow:hidden;background:#eee;margin-top:8px;display:none}
+  #photoSection .bar > i{display:block;height:100%;width:0;background:var(--brand);transition:width .2s}
+  #photoSection .spin{display:none;margin-top:8px;font-size:13px;color:#555}
+
   @media (max-width: 640px) {
-    .app { grid-template-columns: 1fr; padding: 10px; }
-    .coat-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
-    .coat .chip { height: 56px; }
-    .coat .meta { font-size: 12px; padding: 5px 7px; }
-    .coat .meta small { display:none; }
-    .traits { grid-template-columns: 1fr; gap: 10px; }
-    .traits-list label { padding: 8px 10px; }
-    .traits-list input[type="checkbox"] { transform: scale(1.25); }
-    .actions { flex-direction: column; gap: 10px; }
-    .btn { width: 100%; padding: 14px 16px; font-size: 16px; }
-    .swatches { grid-template-columns: 1fr; gap: 12px; }
-    .sw .chip { height: 84px; }
-    .sw .meta { padding: 10px 12px; }
-    .rowsm code { font-size: 12px; }
-    body { font-size: 16px; }
+    .app{grid-template-columns:1fr;padding:10px}
+    .coat-grid{grid-template-columns:repeat(2,1fr);gap:10px}
+    .coat .chip{height:56px}
+    .coat .meta{font-size:12px;padding:5px 7px}
+    .coat .meta small{display:none}
+    .traits{grid-template-columns:1fr;gap:10px}
+    .traits-list label{padding:8px 10px}
+    .traits-list input[type="checkbox"]{transform:scale(1.25)}
+    .actions{flex-direction:column;gap:10px}
+    .btn{width:100%;padding:14px 16px;font-size:16px}
+    .swatches{grid-template-columns:1fr;gap:12px}
+    .sw .chip{height:84px}
+    .sw .meta{padding:10px 12px}
+    .rowsm code{font-size:12px}
+    body{font-size:16px}
   }
-  .coat, .btn, .traits-list label { min-height: 44px; }
+  .coat,.btn,.traits-list label{min-height:44px}
 </style>
 </head>
 <body>
 <header>
   <h1>愛犬パーソナルカラー診断</h1>
-  <div class="subtitle">合計27,000通りの毛色×性格の組み合わせから、<br>愛犬に似合う3色を診断します</div>
+  <div class="subtitle">合計27,000通りの毛色×性格の組み合わせから、愛犬に似合う3色を診断します</div>
 </header>
 
 <div class="app">
@@ -93,11 +99,11 @@
 
   <section class="card">
     <h2>愛犬パーソナルカラー診断結果</h2>
-    <p class="hint">メイン：毛の色から似合う色 / サブ：性格加味 / アクセント：コントラスト</p>
+    <p class="hint">メイン：毛色ベース / サブ：性格も加味 / アクセント：コントラスト重視</p>
     <div class="swatches">
-      <div class="sw"><div class="chip" id="mainChip"></div><div class="meta"><div class="ttl">メイン</div><div class="rowsm"><span id="mainName">—</span><code id="mainHex">—</code></div></div></div>
-      <div class="sw"><div class="chip" id="subChip"></div><div class="meta"><div class="ttl">サブ</div><div class="rowsm"><span id="subName">—</span><code id="subHex">—</code></div></div></div>
-      <div class="sw"><div class="chip" id="accChip"></div><div class="meta"><div class="ttl">アクセント</div><div class="rowsm"><span id="accName">—</span><code id="accHex">—</code></div></div></div>
+      <div class="sw"><div class="chip" id="mainChip" style="background:#fff"></div><div class="meta"><div class="ttl">メイン</div><div class="rowsm"><span id="mainName">—</span><code id="mainHex">—</code></div></div></div>
+      <div class="sw"><div class="chip" id="subChip"  style="background:#fff"></div><div class="meta"><div class="ttl">サブ</div><div class="rowsm"><span id="subName">—</span><code id="subHex">—</code></div></div></div>
+      <div class="sw"><div class="chip" id="accChip"  style="background:#fff"></div><div class="meta"><div class="ttl">アクセント</div><div class="rowsm"><span id="accName">—</span><code id="accHex">—</code></div></div></div>
     </div>
   </section>
 </div>
@@ -105,8 +111,11 @@
 <section class="card" id="photoSection" style="margin:16px auto;max-width:1100px;">
   <h2>愛犬写真の背景除去＆3色プレビュー</h2>
   <p class="hint">画像をアップロードすると背景を自動で除去し、診断の3色背景でプレビューできます</p>
-  <input id="upload" type="file" accept="image/*" />
+
+  <input id="upload" type="file" accept="image/png,image/jpeg,image/webp, image/heic, image/heif" />
   <div id="upMsg" class="note" style="margin-top:8px;display:none;"></div>
+  <div class="bar" id="bar"><i></i></div>
+  <div class="spin" id="spin">処理中…</div>
 
   <div id="previewArea" style="display:none; margin-top:12px;">
     <div style="display:grid; gap:12px;">
@@ -115,29 +124,25 @@
       <canvas id="cvAcc"  width="900" height="900" style="max-width:100%;border:1px solid #eee;border-radius:8px;"></canvas>
     </div>
     <div class="actions" style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
-      <button class="btn" id="dlMain">メイン色背景をダウンロード</button>
-      <button class="btn" id="dlSub">サブ色背景をダウンロード</button>
-      <button class="btn" id="dlAcc">アクセント色背景をダウンロード</button>
+      <button class="btn" id="dlMain" style="padding:10px 14px; border-radius:8px; border:1px solid #ddd;">メイン色背景をダウンロード</button>
+      <button class="btn" id="dlSub"  style="padding:10px 14px; border-radius:8px; border:1px solid #ddd;">サブ色背景をダウンロード</button>
+      <button class="btn" id="dlAcc"  style="padding:10px 14px; border-radius:8px; border:1px solid #ddd;">アクセント色背景をダウンロード</button>
     </div>
   </div>
 </section>
 
+<!-- ================== 診断ロジック（省略なし・既存でOK） ================== -->
 <script>
-/* ======= 既存ロジック（色計算など） —— 省略なし ======= */
-/* …（ここはあなたの現在の計算ロジックそのまま。長いのでこのまま使えます）… */
-/* 以降は UI 操作用の関数だけ載せます（本質ではないため説明を省略） */
+/* ここに（あなたの）診断ロジック：PALETTE/COATS/TRAITS/pickColors/render/… をそのまま残す。
+   既に動いているので省略します。エラーが出ない限りそのままでOK。 */
 </script>
 
+<!-- ============ 写真モジュール（唯一のアップロード処理） ============ -->
 <script>
-/*** 進行表示 ***/
-function setUpMsg(text,isErr=false){
-  const el=document.getElementById('upMsg');
-  el.style.display='block';
-  el.style.color=isErr?'#b00020':'#b26b00';
-  el.textContent=text;
-}
+/*** 旧スニペット無効化（#file が残っていれば DOM から除去） ***/
+document.getElementById('file')?.remove();
 
-/*** 診断結果HEXを取る ***/
+/*** 診断HEXを取得 ***/
 function currentResultHexes(){
   const m=document.getElementById('mainHex')?.textContent.trim();
   const s=document.getElementById('subHex')?.textContent.trim();
@@ -146,131 +151,182 @@ function currentResultHexes(){
   return {main:m,sub:s,acc:a};
 }
 
-/*** 画像読込（できれば createImageBitmap） ***/
-async function readBitmap(file){
-  if('createImageBitmap' in window){
-    try{ return await createImageBitmap(file); }catch{}
+/*** UIヘルパ ***/
+function setUpMsg(text,isErr=false){
+  const el=document.getElementById('upMsg');
+  el.style.display='block';
+  el.style.color=isErr?'#b00020':'#b26b00';
+  el.textContent=text;
+}
+const bar = document.getElementById('bar');
+const barI = bar.querySelector('i');
+const spin = document.getElementById('spin');
+function prog(p){ bar.style.display='block'; barI.style.width = Math.max(0, Math.min(100, p)) + '%'; }
+function spinOn(){ spin.style.display='block'; }
+function spinOff(){ spin.style.display='none'; bar.style.display='none'; }
+
+/*** HEIC/HEIF → JPEG 変換（iOS対策・ブラウザ未対応時はそのまま） ***/
+async function normalizeImageFile(file){
+  try{
+    // ブラウザで createImageBitmap が動けば直接 Bitmap 化（HEIC は多くのブラウザで不可）
+    if ('createImageBitmap' in window) {
+      let f = file;
+      // MIME が heic/heif なら一度画像読み込みを試す（失敗したらそのまま返す）
+      if (/image\/(heic|heif)/i.test(file.type)) {
+        try {
+          await createImageBitmap(file);
+        } catch { return file; } // 対応してない環境はサーバでそのまま
+      }
+      const bmp = await createImageBitmap(f);
+      // 長辺1600にリサイズ & JPEG 化（容量削減）
+      const maxSide = 1600;
+      const scale = Math.min(maxSide / bmp.width, maxSide / bmp.height, 1);
+      const w = Math.round(bmp.width * scale);
+      const h = Math.round(bmp.height * scale);
+      const c = new OffscreenCanvas(w, h);
+      const ctx = c.getContext('2d');
+      ctx.drawImage(bmp, 0, 0, w, h);
+      const blob = await c.convertToBlob({ type: 'image/jpeg', quality: 0.9 });
+      return new File([blob], (file.name || 'image') + '.jpg', { type:'image/jpeg' });
+    }
+  }catch(e){
+    console.warn('normalizeImageFile fallback:', e);
   }
-  // Fallback: FileReader -> <img>
-  const dataUrl = await new Promise((resolve,reject)=>{
-    const fr=new FileReader();
-    fr.onload=()=>resolve(fr.result);
-    fr.onerror=reject;
-    fr.readAsDataURL(file);
-  });
-  const img = await new Promise((resolve,reject)=>{
-    const im=new Image();
-    im.onload=()=>resolve(im);
-    im.onerror=reject;
-    im.src=dataUrl;
-  });
-  // CanvasImageSource として返す（createImageBitmap と互換）
-  return img;
+  // フォールバック：そのまま
+  return file;
 }
 
-/*** 縮小→JPEG Blob ***/
-async function bitmapToJpegBlob(bitmap,maxSide=1600,quality=0.85){
-  const w=bitmap.width||bitmap.naturalWidth;
-  const h=bitmap.height||bitmap.naturalHeight;
-  const scale=Math.min(1,maxSide/Math.max(w,h));
-  const dw=Math.max(1,Math.round(w*scale));
-  const dh=Math.max(1,Math.round(h*scale));
-  const cv=document.createElement('canvas');
-  cv.width=dw; cv.height=dh;
-  const ctx=cv.getContext('2d');
-  ctx.drawImage(bitmap,0,0,dw,dh);
-  return await new Promise(res=>cv.toBlob(b=>res(b),'image/jpeg',quality));
-}
-
-/*** Blob -> Base64(ヘッダなし) ***/
+/*** Blob → base64（先頭 data: を外した本体） ***/
 function blobToBase64Body(blob){
   return new Promise((resolve,reject)=>{
     const fr=new FileReader();
-    fr.onload=()=>{
-      const s=String(fr.result||'');
-      resolve(s.split(',')[1]||'');
-    };
+    fr.onload=()=>{ try{
+      const s = String(fr.result || '');
+      resolve(s.split(',')[1] || '');
+    }catch(e){ reject(e); } };
     fr.onerror=reject;
     fr.readAsDataURL(blob);
   });
 }
 
-/*** 背景除去API呼び出し（JSON） ***/
-async function callRemoveBg(base64Body, filename='image.jpg'){
-  const r=await fetch('/api/remove-bg',{
+/*** JSON で /api/remove-bg に投げる ***/
+async function removeBgByJson(file){
+  // 進捗UI
+  prog(5); spinOn();
+
+  const normalized = await normalizeImageFile(file);
+  prog(20);
+
+  const b64 = await blobToBase64Body(normalized);
+  prog(35);
+
+  const r = await fetch('/api/remove-bg', {
     method:'POST',
     headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({ filename, mime:'image/jpeg', data:base64Body })
+    body: JSON.stringify({
+      filename: normalized.name || 'image.jpg',
+      mime: normalized.type || 'image/jpeg',
+      data: b64
+    })
   });
+
+  prog(70);
+
   if(!r.ok){
-    const t=await r.text().catch(()=> '');
-    throw new Error(`HTTP ${r.status}: ${t.slice(0,200)}`);
+    let detail='';
+    try{ detail = await r.text(); }catch{}
+    throw new Error(`HTTP ${r.status}: ${detail?.slice(0,300)}`);
   }
-  return await r.blob(); // PNG Blob
+
+  const blob = await r.blob(); // PNG
+  prog(100);
+  return blob;
 }
 
-/*** Blobを<img>として読み込み ***/
+/*** Blob → HTMLImageElement ***/
 function loadImageFromBlob(blob){
   return new Promise((resolve,reject)=>{
-    const url=URL.createObjectURL(blob);
-    const im=new Image();
-    im.onload=()=>{URL.revokeObjectURL(url);resolve(im)};
-    im.onerror=e=>{URL.revokeObjectURL(url);reject(e)};
-    im.src=url;
+    const url = URL.createObjectURL(blob);
+    const im = new Image();
+    im.onload = ()=>{ URL.revokeObjectURL(url); resolve(im); };
+    im.onerror = e =>{ URL.revokeObjectURL(url); reject(e); };
+    im.src = url;
   });
 }
 
-/*** 合成描画 ***/
+/*** 合成（単色背景＋中央フィット） ***/
 function drawComposite(canvas,bgHex,subjectImg){
   const ctx=canvas.getContext('2d');
   const W=canvas.width,H=canvas.height;
   ctx.clearRect(0,0,W,H);
-  ctx.fillStyle=bgHex; ctx.fillRect(0,0,W,H);
+  ctx.fillStyle=bgHex;
+  ctx.fillRect(0,0,W,H);
   const pad=.05,maxW=W*(1-2*pad),maxH=H*(1-2*pad);
   const scale=Math.min(maxW/subjectImg.width,maxH/subjectImg.height);
   const dw=subjectImg.width*scale,dh=subjectImg.height*scale;
   const dx=(W-dw)/2,dy=(H-dh)/2;
-  ctx.shadowColor='rgba(0,0,0,.15)'; ctx.shadowBlur=Math.round(W*.02);
-  ctx.drawImage(subjectImg,dx,dy,dw,dh); ctx.shadowBlur=0;
+  ctx.shadowColor='rgba(0,0,0,.15)';
+  ctx.shadowBlur=Math.round(W*.02);
+  ctx.drawImage(subjectImg,dx,dy,dw,dh);
+  ctx.shadowBlur=0;
 }
 
-/*** DL ***/
-function downloadCanvas(c, name){
-  const url=c.toDataURL('image/png');
-  const a=document.createElement('a'); a.href=url; a.download=name;
-  document.body.appendChild(a); a.click(); a.remove();
-}
-
-/*** 入口 ***/
-document.getElementById('upload').addEventListener('change', async (e)=>{
-  const file=e.target.files?.[0]; if(!file) return;
-  const hexes=currentResultHexes();
-  if(!hexes){ setUpMsg('先に診断を実行して、3色を確定してください。',true); return; }
-
-  try{
-    setUpMsg('画像を最適化中…');
-    const bmp=await readBitmap(file);
-    const jpegBlob=await bitmapToJpegBlob(bmp,1600,0.85);
-    const body=await blobToBase64Body(jpegBlob);
-
-    setUpMsg('背景を削除中…（数秒）');
-    const cutBlob=await callRemoveBg(body,(file.name||'image').replace(/\.[^.]+$/,'')+'.jpg');
-    const subject=await loadImageFromBlob(cutBlob);
-
-    drawComposite(document.getElementById('cvMain'),hexes.main,subject);
-    drawComposite(document.getElementById('cvSub') ,hexes.sub ,subject);
-    drawComposite(document.getElementById('cvAcc') ,hexes.acc ,subject);
-    document.getElementById('previewArea').style.display='block';
-    setUpMsg('プレビューを表示しました。各ボタンから保存できます。');
-  }catch(err){
-    console.error(err);
-    setUpMsg('背景除去に失敗しました：'+String(err),true);
+/*** ダウンロード ***/
+function downloadCanvas(canvas, filename){
+  const dataUrl=canvas.toDataURL('image/png');
+  const isIOS=/iP(hone|ad|od)/.test(navigator.platform)||
+              (navigator.userAgent.includes('Mac') && 'ontouchend' in document);
+  if(isIOS){
+    const w=window.open(); if(!w) return;
+    w.document.write('<html><head><title>長押しで保存</title></head><body style="margin:0">');
+    w.document.write(`<img src="${dataUrl}" style="width:100%;height:auto;display:block">`);
+    w.document.write('</body></html>');
+    w.document.close();
+  }else{
+    const a=document.createElement('a');
+    a.href=dataUrl; a.download=filename; document.body.appendChild(a); a.click(); a.remove();
   }
-});
+}
 
-document.getElementById('dlMain').addEventListener('click',()=>downloadCanvas(document.getElementById('cvMain'),'main.png'));
-document.getElementById('dlSub' ).addEventListener('click',()=>downloadCanvas(document.getElementById('cvSub' ),'sub.png'));
-document.getElementById('dlAcc' ).addEventListener('click',()=>downloadCanvas(document.getElementById('cvAcc' ),'accent.png'));
+/*** 入口：アップロード ***/
+const uploadEl=document.getElementById('upload');
+if(uploadEl){
+  uploadEl.addEventListener('change', async (e)=>{
+    const file=e.target.files?.[0]; if(!file) return;
+
+    const hexes=currentResultHexes();
+    if(!hexes){ setUpMsg('先に診断を実行して、3色を確定してください。',true); return; }
+
+    if(!/^image\//i.test(file.type)){ setUpMsg('画像ファイルを選択してください。',true); return; }
+    if(file.size>8*1024*1024){ setUpMsg('画像が大きすぎます（8MB以下推奨）',true); return; }
+
+    try{
+      setUpMsg('背景を削除中…（数秒かかります）');
+      prog(2); spinOn();
+
+      const cutBlob=await removeBgByJson(file);
+      const subject=await loadImageFromBlob(cutBlob);
+
+      drawComposite(document.getElementById('cvMain'),hexes.main,subject);
+      drawComposite(document.getElementById('cvSub'), hexes.sub ,subject);
+      drawComposite(document.getElementById('cvAcc'), hexes.acc ,subject);
+
+      document.getElementById('previewArea').style.display='block';
+      setUpMsg('プレビューを表示しました。各ボタンから保存できます。');
+    }catch(err){
+      console.error(err);
+      setUpMsg('背景除去に失敗しました： '+String(err).slice(0,500),true);
+    }finally{
+      spinOff();
+      prog(0);
+    }
+  });
+}
+
+/*** ダウンロードボタン ***/
+document.getElementById('dlMain')?.addEventListener('click',()=>downloadCanvas(document.getElementById('cvMain'),'main.png'));
+document.getElementById('dlSub') ?.addEventListener('click',()=>downloadCanvas(document.getElementById('cvSub') ,'sub.png'));
+document.getElementById('dlAcc') ?.addEventListener('click',()=>downloadCanvas(document.getElementById('cvAcc') ,'accent.png'));
 </script>
 </body>
 </html>
