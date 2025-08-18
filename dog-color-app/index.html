@@ -1,448 +1,55 @@
-<!doctype html>
-<html lang="ja">
-<head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>愛犬パーソナルカラー診断（衝突回避・本番安定版）</title>
-</head>
-<body style="margin:0;background:#f7f7f9;color:#222;font:15px/1.6 system-ui,-apple-system,Segoe UI,'Hiragino Kaku Gothic ProN','Noto Sans JP',sans-serif">
-<dog-color-app></dog-color-app>
+// /api/remove-bg.js
+import fetch from 'node-fetch';
+import FormData from 'form-data';
 
-<script>
-/* =========================================================
-   Shadow DOM コンポーネント（外界とCSS/JSを完全分離）
-   ========================================================= */
-customElements.define('dog-color-app', class extends HTMLElement{
-  connectedCallback(){
-    const root = this.attachShadow({mode:'open'});
-    root.innerHTML = `
-      <style>
-        :host{display:block}
-        :root{--ink:#222;--muted:#667085;--bg:#f7f7f9;--panel:#fff;--brand:#2d9cdb}
-        *{box-sizing:border-box}
-        header{padding:18px 14px;text-align:center;background:#fff;border-bottom:1px solid #eee}
-        h1{margin:0 0 6px;font-size:20px}
-        .subtitle{font-size:13px;color:#666;line-height:1.5}
-        .app{max-width:1100px;margin:0 auto;padding:16px;display:grid;gap:14px}
-        @media(min-width:900px){.app{grid-template-columns:1.2fr 1fr}}
-        .card{background:var(--panel);border:1px solid #e9eaee;border-radius:12px;padding:14px}
-        h2{margin:0 0 8px;font-size:16px}
-        .hint{font-size:12px;color:var(--muted);display:flex;gap:6px;align-items:flex-start}
-        .hint::before{content:"ⓘ";display:inline-block;line-height:1;border-radius:50%;font-size:12px;color:#4a77a8}
-        .coat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px}
-        .coat{border:1px solid #e6e7eb;border-radius:10px;overflow:hidden;background:#fff;cursor:pointer;min-height:44px}
-        .coat .chip{height:46px}
-        .coat .meta{padding:6px 8px;font-size:13px;display:flex;justify-content:space-between;align-items:center;gap:6px}
-        .coat .meta span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0}
-        .coat small{color:#6c727f}
-        .coat.selected{outline:3px solid #8ccdf5;border-color:#8ccdf5}
-        .traits{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
-        .group{border:1px solid #eee;border-radius:10px;padding:8px}
-        .group h3{margin:0 0 6px;font-size:12px;color:var(--muted)}
-        .traits-list label{display:flex;align-items:center;gap:6px;padding:3px 4px;border-radius:6px}
-        .traits-list label:hover{background:#f6f7f9}
-        .actions{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
-        .btn{border:0;border-radius:999px;padding:9px 14px;font-weight:700;cursor:pointer;min-height:44px}
-        .primary{background:var(--brand);color:#fff}
-        .ghost{background:#f1f3f5;color:#333}
-        .err{color:#b00020;font-size:13px;margin-top:6px;display:none}
-        .note{color:#b26b00;font-size:12px;margin-top:6px;display:none}
-        .swatches{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
-        .sw{border:1px solid #e6e6e6;border-radius:12px;overflow:hidden;background:#fff}
-        .sw .chip{height:70px}
-        .sw .meta{padding:8px 10px}
-        .sw .ttl{font-weight:700;font-size:13px}
-        .rowsm{display:flex;justify-content:space-between;align-items:center;margin-top:2px}
-        .rowsm code{background:#f2f4f7;border-radius:6px;padding:2px 6px}
-        #photoSection .bar{height:4px;border-radius:4px;overflow:hidden;background:#eee;margin-top:8px;display:none}
-        #photoSection .bar > i{display:block;height:100%;width:0;background:var(--brand);transition:width .2s}
-        #photoSection .spin{display:none;margin-top:8px;font-size:13px;color:#555}
-        .drop{margin-top:10px;border:1px dashed #c5ced6;border-radius:10px;padding:12px;color:#465a6c;background:#fafbfc}
-        .drop.drag{background:#eef6fd;border-color:#8ccdf5}
-        @media (max-width: 640px) {
-          .app{grid-template-columns:1fr;padding:10px}
-          .coat-grid{grid-template-columns:repeat(2,1fr);gap:10px}
-          .coat .chip{height:56px}
-          .coat .meta{font-size:12px;padding:5px 7px}
-          .coat .meta small{display:none}
-          .traits{grid-template-columns:1fr;gap:10px}
-          .traits-list label{padding:8px 10px}
-          .traits-list input[type="checkbox"]{transform:scale(1.25)}
-          .btn{width:100%;padding:14px 16px;font-size:16px}
-          .swatches{grid-template-columns:1fr;gap:12px}
-          .sw .chip{height:84px}
-          .sw .meta{padding:10px 12px}
-          .rowsm code{font-size:12px}
-          body{font-size:16px}
-        }
-      </style>
-
-      <header>
-        <h1>愛犬パーソナルカラー診断</h1>
-        <div class="subtitle">合計27,000通りの毛色×性格の組み合わせから、愛犬に似合う3色を診断します</div>
-      </header>
-
-      <div class="app" id="app">
-        <section class="card">
-          <h2>1) 愛犬の毛色を選択</h2>
-          <p class="hint">1色のみ選択してください。(毛が2色の場合はメインの色を選択)</p>
-          <div id="coatGrid" class="coat-grid" aria-label="毛色一覧"></div>
-
-          <h2 style="margin-top:14px">2) 愛犬の性格を1～3つまで選択</h2>
-          <p class="hint">各カテゴリーから1つずつ選ぶことも、1つのカテゴリーから3つ選ぶこともできます</p>
-          <div class="traits">
-            <div class="group"><h3>内向的</h3><div id="traits-intro" class="traits-list"></div></div>
-            <div class="group"><h3>中立的</h3><div id="traits-neutral" class="traits-list"></div></div>
-            <div class="group"><h3>外交的</h3><div id="traits-extro" class="traits-list"></div></div>
-          </div>
-
-          <div class="actions">
-            <button class="btn primary" id="run">診断する</button>
-            <button class="btn ghost" id="reset">リセット</button>
-          </div>
-          <div id="msg" class="err"></div>
-          <div id="note" class="note">性格は1〜3つまで選択してください。</div>
-        </section>
-
-        <section class="card">
-          <h2>愛犬パーソナルカラー診断結果</h2>
-          <p class="hint">メイン：毛色ベース / サブ：性格も加味 / アクセント：コントラスト重視</p>
-          <div class="swatches">
-            <div class="sw"><div class="chip" id="mainChip" style="background:#fff"></div><div class="meta"><div class="ttl">メイン</div><div class="rowsm"><span id="mainName">—</span><code id="mainHex">—</code></div></div></div>
-            <div class="sw"><div class="chip" id="subChip"  style="background:#fff"></div><div class="meta"><div class="ttl">サブ</div><div class="rowsm"><span id="subName">—</span><code id="subHex">—</code></div></div></div>
-            <div class="sw"><div class="chip" id="accChip"  style="background:#fff"></div><div class="meta"><div class="ttl">アクセント</div><div class="rowsm"><span id="accName">—</span><code id="accHex">—</code></div></div></div>
-          </div>
-        </section>
-      </div>
-
-      <section class="card" id="photoSection" style="margin:16px auto;max-width:1100px;">
-        <h2>愛犬写真の背景除去＆3色プレビュー</h2>
-        <p class="hint">画像をアップロード/ドロップ/ペーストすると背景を自動で除去し、診断の3色背景でプレビューできます（ローカル処理なのでサーバ不要）</p>
-
-        <input id="upload" type="file" accept="image/*" />
-        <div class="drop" id="drop">ここに画像をドラッグ＆ドロップ、または画像を貼り付け（Ctrl/⌘+V）</div>
-
-        <div id="upMsg" class="note" style="margin-top:8px;display:none;"></div>
-        <div class="bar" id="bar"><i></i></div>
-        <div class="spin" id="spin">処理中…</div>
-
-        <div id="previewArea" style="display:none; margin-top:12px;">
-          <div style="display:grid; gap:12px;">
-            <canvas id="cvMain" width="900" height="900" style="max-width:100%;border:1px solid #eee;border-radius:8px;"></canvas>
-            <canvas id="cvSub"  width="900" height="900" style="max-width:100%;border:1px solid #eee;border-radius:8px;"></canvas>
-            <canvas id="cvAcc"  width="900" height="900" style="max-width:100%;border:1px solid #eee;border-radius:8px;"></canvas>
-          </div>
-          <div class="actions" style="margin-top:10px">
-            <button class="btn" id="dlMain" style="padding:10px 14px; border-radius:8px; border:1px solid #ddd;">メイン色背景をダウンロード</button>
-            <button class="btn" id="dlSub"  style="padding:10px 14px; border-radius:8px; border:1px solid #ddd;">サブ色背景をダウンロード</button>
-            <button class="btn" id="dlAcc"  style="padding:10px 14px; border-radius:8px; border:1px solid #ddd;">アクセント色背景をダウンロード</button>
-          </div>
-        </div>
-      </section>
-    `;
-
-    // ========= ヘルパ =========
-    const $ = (sel) => root.querySelector(sel);
-    const $$= (sel) => [...root.querySelectorAll(sel)];
-    const show = (el, yes=true)=>{ el.style.display = yes ? 'block':'none'; };
-
-    // ========= データ =========
-    const PALETTE=[{hex:"#F5F5DC",cat:"ベージュ",tone:"ライト",name:"ベージュVL"},{hex:"#E4CDA7",cat:"ベージュ",tone:"ライト",name:"ベージュL"},{hex:"#D2B48C",cat:"ベージュ",tone:"ミドル",name:"タン"},{hex:"#C3A276",cat:"ベージュ",tone:"ダーク",name:"キャメル"},{hex:"#FFFF99",cat:"黄色",tone:"ライト",name:"ライトイエロー"},{hex:"#FFFF00",cat:"黄色",tone:"ミドル",name:"イエロー"},{hex:"#DFFF00",cat:"黄色",tone:"ミドル",name:"ライムイエロー"},{hex:"#FFEF00",cat:"黄色",tone:"ミドル",name:"カナリア"},{hex:"#FFD166",cat:"黄色",tone:"ミドル",name:"ハニー"},{hex:"#F2C94C",cat:"黄色",tone:"ミドル",name:"ゴールデン"},{hex:"#FFBF00",cat:"オレンジ",tone:"ミドル",name:"アンバー"},{hex:"#FF7F00",cat:"オレンジ",tone:"ミドル",name:"オレンジ"},{hex:"#FF6700",cat:"オレンジ",tone:"ミドル",name:"タンジェリン"},{hex:"#FF6347",cat:"オレンジ",tone:"ミドル",name:"トマト"},{hex:"#FADADD",cat:"ピンク",tone:"ライト",name:"ローズミスト"},{hex:"#FBCEB1",cat:"ピンク",tone:"ライト",name:"ピーチ"},{hex:"#FFA8A8",cat:"ピンク",tone:"ライト",name:"ベビーピンク"},{hex:"#F88379",cat:"ピンク",tone:"ミドル",name:"コーラル"},{hex:"#E07A5F",cat:"ピンク",tone:"ミドル",name:"テラコッタP"},{hex:"#FF69B4",cat:"ピンク",tone:"ミドル",name:"ホットピンク"},{hex:"#FF4F9A",cat:"ピンク",tone:"ミドル",name:"ビビッドピンク"},{hex:"#FF00FF",cat:"ピンク",tone:"ミドル",name:"マゼンタ"},{hex:"#FF1493",cat:"ピンク",tone:"ミドル",name:"ディープピンク"},{hex:"#C21E56",cat:"赤",tone:"ミドル",name:"ルビー"},{hex:"#D81B60",cat:"赤",tone:"ミドル",name:"ラズベリー"},{hex:"#FF0000",cat:"赤",tone:"ミドル",name:"レッド"},{hex:"#800020",cat:"赤",tone:"ダーク",name:"バーガンディ"},{hex:"#98FFCC",cat:"緑",tone:"ライト",name:"ミント"},{hex:"#93C572",cat:"緑",tone:"ライト",name:"ピスタチオ"},{hex:"#00FF7F",cat:"緑",tone:"ライト",name:"スプリングG"},{hex:"#00FF00",cat:"緑",tone:"ライト",name:"ライム"},{hex:"#4CBB17",cat:"緑",tone:"ライト",name:"ケリー"},{hex:"#00A550",cat:"緑",tone:"ライト",name:"エメラルド"},{hex:"#6B8E23",cat:"緑",tone:"ミドル",name:"オリーブドラブ"},{hex:"#228B22",cat:"緑",tone:"ミドル",name:"フォレスト"},{hex:"#556B2F",cat:"緑",tone:"ミドル",name:"ダークオリーブ"},{hex:"#4B5320",cat:"緑",tone:"ダーク",name:"アーミーG"},{hex:"#AFEEEE",cat:"青",tone:"ライト",name:"パウダーブルー"},{hex:"#ADD8E6",cat:"青",tone:"ライト",name:"ライトブルー"},{hex:"#00FFFF",cat:"青",tone:"ライト",name:"シアン"},{hex:"#2D9CDB",cat:"青",tone:"ライト",name:"スカイ"},{hex:"#4682B4",cat:"青",tone:"ミドル",name:"スチール"},{hex:"#2EC4B6",cat:"青",tone:"ミドル",name:"ターコイズ"},{hex:"#1B7F79",cat:"青",tone:"ミドル",name:"ティール"},{hex:"#2F5DCC",cat:"青",tone:"ミドル",name:"ロイヤル"},{hex:"#0047AB",cat:"青",tone:"ミドル",name:"コバルト"},{hex:"#0000FF",cat:"青",tone:"ミドル",name:"ブルー"},{hex:"#1F2A44",cat:"青",tone:"ダーク",name:"ミッドナイト"},{hex:"#191970",cat:"青",tone:"ダーク",name:"ネイビー"},{hex:"#CCCCFF",cat:"紫",tone:"ライト",name:"ペールラベンダー"},{hex:"#C8A2C8",cat:"紫",tone:"ライト",name:"ライラック"},{hex:"#B57EDC",cat:"紫",tone:"ミドル",name:"ラベンダー"},{hex:"#8E4585",cat:"紫",tone:"ミドル",name:"プラム"},{hex:"#8F00FF",cat:"紫",tone:"ミドル",name:"エレクトリックP"},{hex:"#4B0082",cat:"紫",tone:"ミドル",name:"インディゴ"},{hex:"#C19A6B",cat:"ブラウン",tone:"ライト",name:"ライトブラウン"},{hex:"#B6864D",cat:"ブラウン",tone:"ライト",name:"ミドルブラウン"},{hex:"#CD7F32",cat:"ブラウン",tone:"ミドル",name:"ブロンズ"},{hex:"#A0522D",cat:"ブラウン",tone:"ミドル",name:"セピア"},{hex:"#C04000",cat:"ブラウン",tone:"ダーク",name:"ラセット"},{hex:"#722F37",cat:"ブラウン",tone:"ダーク",name:"マルーンB"},{hex:"#483C32",cat:"ブラウン",tone:"ダーク",name:"ダークトープ"},{hex:"#D6D6D6",cat:"グレー",tone:"ライト",name:"ライトグレー"},{hex:"#A9A9A9",cat:"グレー",tone:"ライト",name:"ダークグレー(明)"},{hex:"#808080",cat:"グレー",tone:"ミドル",name:"グレー"},{hex:"#696969",cat:"グレー",tone:"ミドル",name:"ディムグレー"},{hex:"#708090",cat:"グレー",tone:"ミドル",name:"スレートグレー"},{hex:"#36454F",cat:"グレー",tone:"ダーク",name:"チャコール"},{hex:"#1E1E1E",cat:"グレー",tone:"ダーク",name:"ジェット"},{hex:"#000000",cat:"グレー",tone:"ダーク",name:"ブラック"}];
-    const COATS=[["ホワイト","#FFFFFF"],["クリーム","#FFFDD0"],["フォーン","#C3A276"],["タン","#C49A6C"],["セーブル","#7B5B3E"],["アプリコット","#E6A571"],["イエロー","#FFD54F"],["ゴールド","#FFD700"],["レッド","#C04000"],["マホガニー","#722F37"],["マール","#7A92A6"],["ブルー","#5A7FA3"],["シルバー","#A9A9A9"],["ウルフセーブル","#8E8E86"],["グレー","#808080"],["ライトブラウン","#B6864D"],["ブラウン","#8B5A2B"],["ブリンドル","#5A4636"],["ダークチョコレート","#3A2C2A"],["ブラック","#000000"]];
-    const TRAITS={intro:["繊細","慎重","警戒心が強い","寂しがり屋","おだやか","マイペース","独立心が強い","頑固"],neutral:["賢い","集中力が高い","クール","素直","好奇心旺盛","甘えん坊","順応性が高い"],extro:["勇敢","活発","お調子者","リーダー気質","社交的"]};
-
-    // ========= 色ユーティリティ =========
-    const hexToRgb=h=>{const m=h.replace('#','');return{r:parseInt(m.slice(0,2),16),g:parseInt(m.slice(2,4),16),b:parseInt(m.slice(4,6),16)}};
-    const rgbToHue=({r,g,b})=>{r/=255;g/=255;b/=255;const mx=Math.max(r,g,b),mn=Math.min(r,g,b),d=mx-mn;if(d===0)return 0;let h=mx===r?(g-b)/d:mx===g?(b-r)/d+2:(r-g)/d+4;return (h*60+360)%360};
-    const hueOf=hex=>rgbToHue(hexToRgb(hex));
-    const hueDist=(a,b)=>{const d=Math.abs(a-b)%360;return d>180?360-d:d};
-    function rgbToXyz(r,g,b){ r/=255; g/=255; b/=255;
-      r=r>0.04045?((r+0.055)/1.055)**2.4:r/12.92;
-      g=g>0.04045?((g+0.055)/1.055)**2.4:g/12.92;
-      b=b>0.04045?((b+0.055)/1.055)**2.4:b/12.92;
-      const x=r*0.4124+g*0.3576+b*0.1805, y=r*0.2126+g*0.7152+b*0.0722, z=r*0.0193+g*0.1192+b*0.9505;
-      return {x:x*100,y:y*100,z:z*100}
-    }
-    function xyzToLab(x,y,z){const xr=x/95.047,yr=y/100,zr=z/108.883;const f=t=>t>0.008856?Math.cbrt(t):(7.787*t+16/116);const fx=f(xr),fy=f(yr),fz=f(zr);return{L:116*fy-16,a:500*(fx-fy),b:200*(fy-fz)}}
-    const hexToLab=hex=>{const {r,g,b}=hexToRgb(hex);const {x,y,z}=rgbToXyz(r,g,b);return xyzToLab(x,y,z)};
-    function labChroma(hex){const L=hexToLab(hex);return Math.hypot(L.a,L.b);}
-
-    // ========= センチメント =========
-    const traitGroup={}; TRAITS.intro.forEach(t=>traitGroup[t]="内向"); TRAITS.neutral.forEach(t=>traitGroup[t]="中立"); TRAITS.extro.forEach(t=>traitGroup[t]="外交");
-    function sentiment(traits){let s=0,n=0,e=0;traits.forEach(t=>{const g=traitGroup[t];if(g==="内向")s++;else if(g==="外交")e++;else n++;});if(e>=s&&e>=n)return"外交";if(s>=n&&s>=e)return"内向";return"中立"}
-    const tonePrefWeight={内向:{ライト:1.0,ミドル:0.7,ダーク:0.3},中立:{ライト:0.7,ミドル:1.0,ダーク:0.7},外交:{ライト:0.4,ミドル:0.9,ダーク:1.0}};
-    const TRAIT_HUE_TILT={"繊細":[330,285],"慎重":[30,210],"警戒心が強い":[30,210],"寂しがり屋":[330,270],"おだやか":[90,40],"マイペース":[40,210],"独立心が強い":[270,210],"頑固":[20,0],"賢い":[210,220],"集中力が高い":[210,200],"クール":[210,240],"素直":[120,60],"好奇心旺盛":[60,330],"甘えん坊":[330,300],"順応性が高い":[40,120],"勇敢":[0,30],"活発":[30,60],"お調子者":[60,330],"リーダー気質":[270,0],"社交的":[60,30]};
-    function hueBiasScore(H,prefs){if(!prefs||!prefs.length)return 0;let best=0;prefs.forEach(h=>{const d=hueDist(H,h);best=Math.max(best,Math.exp(-(d*d)/(2*25*25)));});return best}
-    function seedFrom(str){let h=2166136261>>>0;for(let i=0;i<str.length;i++){h^=str.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0}
-    function rng(seed){let s=seed>>>0;return ()=>{s=(s*1664525+1013904223)>>>0;return (s&0xffff)/0x10000};}
-
-    function pickColors(coatName,traits){
-      const coatHex=(new Map(COATS)).get(coatName)||"#FFFFFF";
-      const coatHue=hueOf(coatHex);
-      const senti=sentiment(traits);
-      const r=rng(seedFrom(coatName+"|"+traits.slice().sort().join(",")));
-      const favorGray=["クール","賢い","集中力が高い"].some(t=>traits.includes(t));
-      const comp=(coatHue+180)%360;
-      const splits=[(coatHue+150)%360,(coatHue+210)%360];
-      const splitPrimary=splits[Math.floor(r()*splits.length)];
-      const scored=PALETTE.map(c=>{
-        const H=hueOf(c.hex),L=hexToLab(c.hex).L,C=labChroma(c.hex);
-        const sAnalog=Math.exp(-(hueDist(H,coatHue)**2)/(2*35*35));
-        const sComp=Math.exp(-(hueDist(H,comp)**2)/(2*25*25));
-        const sSplit=Math.max(
-          Math.exp(-(hueDist(H,splitPrimary)**2)/(2*22*22)),
-          Math.exp(-(hueDist(H,(splitPrimary===splits[0]?splits[1]:splits[0]))**2)/(2*25*25))
-        );
-        let bias=0;traits.forEach(t=>{bias+=hueBiasScore(H,TRAIT_HUE_TILT[t]);});
-        bias/=Math.max(1,traits.length);
-        const toneW=(tonePrefWeight[senti][c.tone]||0.6);
-        const mainScore=(1.2*sAnalog+0.6*bias)*(0.8+0.4*toneW);
-        const subBase=(0.9*sAnalog+0.9*bias)*(0.7+0.6*toneW);
-        const grayPenalty=Math.max(0,(20-Math.min(C,20))/20);
-        const grayFactor=favorGray?(1-0.25*grayPenalty):senti==="外交"?(1-0.35*grayPenalty):senti==="中立"?(1-0.55*grayPenalty):(1-0.70*grayPenalty);
-        const accentBase=(senti==="外交"?(0.9*sSplit+1.05*sComp):senti==="内向"?(1.1*sSplit+0.6*sComp):(1.0*sSplit+0.8*sComp))+0.55*bias;
-        const wiggle=0.96+0.08*r();
-        return {c,H,L,mainScore,subBase,accentRaw:accentBase*grayFactor*wiggle};
-      });
-      const mainList=[...scored].sort((a,b)=>b.mainScore-a.mainScore);
-      const mTop=mainList[0].mainScore,mNear=mainList.filter(x=>x.mainScore>=mTop*0.98);
-      const main=(mNear[Math.floor(r()*mNear.length)]||mainList[0]).c;
-      const mainHue=hueOf(main.hex),mainL=hexToLab(main.hex).L;
-      const subList=scored.filter(x=>x.c.hex!==main.hex).map(x=>{
-        const huePenalty=Math.exp(-(hueDist(x.H,mainHue)**2)/(2*20*20));
-        const lightPenalty=Math.exp(-((x.L-mainL)**2)/(2*8*8));
-        const diversityPenalty=0.35*huePenalty+0.25*lightPenalty;
-        return {x,score:x.subBase*(1-diversityPenalty)};
-      }).sort((a,b)=>b.score-a.score);
-      const sTop=subList[0].score,sNear=subList.filter(s=>s.score>=sTop*0.97);
-      const sub=(sNear[Math.floor(r()*sNear.length)]||subList[0]).x.c;
-      const usedCats=new Set([main.cat||main.c?.cat,sub.cat||sub.c?.cat].filter(Boolean));
-      const subHue=hueOf(sub.hex);
-      const accentList=scored.filter(x=>x.c.hex!==main.hex&&x.c.hex!==sub.hex).map(x=>{
-        const nearMain=Math.exp(-(hueDist(x.H,mainHue)**2)/(2*18*18));
-        const nearSub=Math.exp(-(hueDist(x.H,subHue)**2)/(2*18*18));
-        let score=x.accentRaw*(1-(0.35*nearMain+0.25*nearSub));
-        if(usedCats.has(x.c.cat)) score*=0.82;
-        if(x.c.cat==="青") score*=0.93;
-        if(x.c.cat==="グレー") score*=0.85;
-        return {x,score};
-      }).sort((a,b)=>b.score-a.score);
-      const aTop=accentList[0].score,aNear=accentList.filter(s=>s.score>=aTop*0.96);
-      const accent=(aNear[Math.floor(r()*aNear.length)]||accentList[0]).x.c;
-      return {main,sub,accent};
+export default async function handler(req, res) {
+  try {
+    if (req.method !== 'POST') {
+      return res.status(405).json({ error: 'METHOD_NOT_ALLOWED' });
     }
 
-    // ========= UI描画 =========
-    const coatGrid = $('#coatGrid'); let selectedCoat=null;
-    (function renderCoats(){
-      coatGrid.innerHTML='';
-      COATS.forEach(([name,hex])=>{
-        const btn = document.createElement('button');
-        btn.type='button'; btn.className='coat';
-        btn.innerHTML = `<div class="chip" style="background:${hex}"></div><div class="meta"><span>${name}</span><small>${hex}</small></div>`;
-        btn.onclick = ()=>{ selectedCoat=name; $$('.coat').forEach(c=>c.classList.remove('selected')); btn.classList.add('selected'); };
-        coatGrid.appendChild(btn);
-      });
-    })();
-    function addTraitList(id,list){
-      const el=$(id.startsWith('#')?id:'#'+id);
-      list.forEach(t=>{
-        const w=document.createElement('label');
-        const cb=document.createElement('input'); cb.type='checkbox'; cb.value=t;
-        cb.onchange = limitTraits;
-        w.appendChild(cb); w.appendChild(document.createTextNode(' '+t));
-        el.appendChild(w);
-      });
-    }
-    addTraitList('traits-intro', TRAITS.intro);
-    addTraitList('traits-neutral',TRAITS.neutral);
-    addTraitList('traits-extro',  TRAITS.extro);
+    const apiKey = process.env.CLIPDROP_API_KEY;
+    if (!apiKey) return res.status(500).json({ error: 'MISSING_API_KEY' });
 
-    const selectedTraits=()=> $$('.traits input[type=checkbox]:checked').map(i=>i.value);
-    function limitTraits(e){
-      const checks=$$('.traits input[type=checkbox]');
-      const checked=checks.filter(c=>c.checked);
-      const note=$('#note');
-      if(checked.length>3){ e.target.checked=false; show(note,true); setTimeout(()=>show(note,false),1400); }
-    }
-    function setSw(prefix,color){
-      $('#'+prefix+'Chip').style.background=color.hex;
-      $('#'+prefix+'Hex').textContent=color.hex;
-      $('#'+prefix+'Name').textContent=color.name;
+    const { filename = 'image.jpg', mime = 'image/jpeg', data } = req.body || {};
+    if (!data) {
+      return res.status(400).json({ error: 'NO_IMAGE_DATA' });
     }
 
-    $('#run').onclick = ()=>{
-      const msg=$('#msg');
-      const traits=selectedTraits();
-      if(!selectedCoat){ msg.textContent='毛色を1つ選択してください。'; show(msg,true); return; }
-      if(traits.length===0){ msg.textContent='性格は1〜3つまで選択してください。'; show(msg,true); return; }
-      show(msg,false);
-      try{
-        const res=pickColors(selectedCoat,traits);
-        setSw('main',res.main); setSw('sub',res.sub); setSw('acc',res.accent);
-      }catch(e){
-        console.error(e);
-        msg.textContent='エラー：内部データに不整合があります。'; show(msg,true);
-      }
-    };
-    $('#reset').onclick = ()=>{
-      selectedCoat=null;
-      $$('.coat').forEach(c=>c.classList.remove('selected'));
-      $$('.traits input[type=checkbox]').forEach(c=>c.checked=false);
-      ['main','sub','acc'].forEach(k=>{
-        $('#'+k+'Chip').style.background='#fff';
-        $('#'+k+'Hex').textContent='—';
-        $('#'+k+'Name').textContent='—';
-      });
-      show($('#msg'),false);
-    };
-
-    // ========= 写真処理（ローカルのみ、衝突回避） =========
-    const upMsg = $('#upMsg'); const bar=$('#bar'); const barI=bar.querySelector('i'); const spin=$('#spin');
-    let _msgBusy=false;
-    const setUpMsg=(text,isErr=false)=>{
-      if(_msgBusy) return; _msgBusy=true;
-      try{
-        upMsg.style.display='block';
-        upMsg.style.color=isErr?'#b00020':'#b26b00';
-        const s=String(text||''); upMsg.textContent = s.length>400? s.slice(0,400)+'…' : s;
-      }finally{ _msgBusy=false; }
-    };
-    const prog=(p)=>{ bar.style.display='block'; barI.style.width=(Math.max(0,Math.min(100,Number(p)||0)))+'%'; };
-    const spinOn=()=>{ spin.style.display='block'; };
-    const spinOff=()=>{ spin.style.display='none'; bar.style.display='none'; };
-
-    function currentResultHexes(){
-      const m=$('#mainHex')?.textContent.trim();
-      const s=$('#subHex') ?.textContent.trim();
-      const a=$('#accHex') ?.textContent.trim();
-      if(!m||m==='—'||!s||s==='—'||!a||a==='—') return null;
-      return {main:m,sub:s,acc:a};
+    let buffer;
+    try {
+      buffer = Buffer.from(data, 'base64');
+    } catch (e) {
+      return res.status(400).json({ error: 'INVALID_BASE64', detail: String(e) });
     }
 
-    async function normalizeImageFile(file,maxSide=1024){
-      let bmp;
-      try{ bmp=await createImageBitmap(file,{imageOrientation:'from-image',premultiplyAlpha:'premultiply'}); }
-      catch{
-        const u=URL.createObjectURL(file);
-        bmp=await new Promise((res,rej)=>{const im=new Image(); im.onload=()=>{URL.revokeObjectURL(u);res(im)}; im.onerror=e=>{URL.revokeObjectURL(u);rej(e)}; im.src=u;});
-      }
-      const scale=Math.min(1,maxSide/Math.max(bmp.width,bmp.height));
-      if(scale===1) return file;
-      const w=Math.round(bmp.width*scale),h=Math.round(bmp.height*scale);
-      const cv=document.createElement('canvas'); cv.width=w; cv.height=h;
-      const ctx=cv.getContext('2d'); ctx.imageSmoothingQuality='high';
-      ctx.drawImage(bmp,0,0,w,h);
-      const blob=await new Promise(r=>cv.toBlob(r,'image/jpeg',0.92));
-      return new File([blob],'image.jpg',{type:'image/jpeg',lastModified:Date.now()});
+    if (!/^image\/(png|jpe?g|webp)$/i.test(mime)) {
+      return res.status(415).json({ error: 'UNSUPPORTED_TYPE', detail: mime });
     }
-    async function localQuickMatting(fileOrImage){
-      const img = fileOrImage instanceof Image ? fileOrImage :
-        await (async()=>{const u=URL.createObjectURL(fileOrImage); const im=new Image(); await new Promise((res,rej)=>{im.onload=()=>{URL.revokeObjectURL(u);res()}; im.onerror=e=>{URL.revokeObjectURL(u);rej(e)}; im.src=u}); return im})();
-      const maxSide=1024, s=Math.min(1,maxSide/Math.max(img.width,img.height));
-      const W=Math.round(img.width*s),H=Math.round(img.height*s);
-      const cv=document.createElement('canvas'); cv.width=W; cv.height=H;
-      const ctx=cv.getContext('2d'); ctx.imageSmoothingQuality='high';
-      ctx.drawImage(img,0,0,W,H);
-      const imgd=ctx.getImageData(0,0,W,H); const d=imgd.data;
-      const dx=Math.max(2,Math.floor(W*0.05)), dy=Math.max(2,Math.floor(H*0.05));
-      function avg(x0,y0,x1,y1){let r=0,g=0,b=0,n=0;for(let y=y0;y<y1;y+=2){let off=(y*W+x0)*4;for(let x=x0;x<x1;x+=2){r+=d[off];g+=d[off+1];b+=d[off+2];n++;off+=8}}return[r/n,g/n,b/n]}
-      const corners=[avg(0,0,dx,dy),avg(W-dx,0,W,dy),avg(0,H-dy,dx,H),avg(W-dx,H-dy,W,H)];
-      const bg=[0,1,2].map(i=>Math.round(corners.reduce((s,v)=>s+v[i],0)/corners.length));
-      const bgL=0.2126*bg[0]+0.7152*bg[1]+0.0722*bg[2]; const th=bgL>180?48:36, soft=th*1.6;
-      for(let i=0;i<d.length;i+=4){
-        const dr=d[i]-bg[0],dg=d[i+1]-bg[1],db=d[i+2]-bg[2]; const dist=Math.sqrt(dr*dr+dg*dg+db*db);
-        let a=255;
-        if(dist<=th){a=0}
-        else if(dist<th*1.2){a=Math.round(255*(dist-th)/(th*0.2))}
-        else if(dist<soft){a=Math.round(255*(dist-th)/(soft-th))}
-        d[i+3]=a;
-      }
-      ctx.putImageData(imgd,0,0);
-      const blob=await new Promise(res=>cv.toBlob(res,'image/png'));
-      return blob;
-    }
-    function drawComposite(canvas,bgHex,img){
-      const ctx=canvas.getContext('2d'), W=canvas.width,H=canvas.height;
-      ctx.clearRect(0,0,W,H); ctx.fillStyle=bgHex; ctx.fillRect(0,0,W,H);
-      const pad=.05,maxW=W*(1-2*pad),maxH=H*(1-2*pad);
-      const s=Math.min(maxW/img.width,maxH/img.height);
-      const dw=img.width*s,dh=img.height*s,dx=(W-dw)/2,dy=(H-dh)/2;
-      ctx.shadowColor='rgba(0,0,0,.15)'; ctx.shadowBlur=Math.round(W*.02);
-      ctx.drawImage(img,dx,dy,dw,dh); ctx.shadowBlur=0;
-    }
-    function downloadCanvas(canvas, filename){
-      const dataUrl=canvas.toDataURL('image/png');
-      const isIOS=/iP(hone|ad|od)/.test(navigator.platform)||(navigator.userAgent.includes('Mac') && 'ontouchend' in document);
-      if(isIOS){
-        const w=open(); if(!w) return;
-        w.document.write('<html><head><title>長押しで保存</title></head><body style="margin:0">');
-        w.document.write(`<img src="${dataUrl}" style="width:100%;height:auto;display:block">`);
-        w.document.write('</body></html>'); w.document.close();
-      }else{
-        const a=document.createElement('a'); a.href=dataUrl; a.download=filename; root.appendChild(a); a.click(); a.remove();
-      }
+    if (buffer.length > 4 * 1024 * 1024) {
+      return res.status(413).json({ error: 'FILE_TOO_LARGE', size: buffer.length });
     }
 
-    // 入口
-    $('#upload').onchange = (e)=>{
-      const f=e.target.files?.[0]; if(f) processAndPreview(f);
-    };
-    const drop=$('#drop');
-    ['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('drag');},{passive:false}));
-    ['dragleave','dragend','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('drag');},{passive:false}));
-    drop.addEventListener('drop',e=>{
-      const f=[...e.dataTransfer.files].find(f=>/^image\//.test(f.type));
-      if(f) processAndPreview(f);
+    const form = new FormData();
+    form.append('image_file', buffer, { filename, contentType: mime });
+
+    const r = await fetch('https://clipdrop-api.co/remove-background/v1', {
+      method: 'POST',
+      headers: { 'x-api-key': apiKey },
+      body: form
     });
-    root.addEventListener('paste',e=>{
-      const it=[...(e.clipboardData?.items||[])].find(i=>/^image\//.test(i.type));
-      if(it){ const f=it.getAsFile(); if(f) processAndPreview(f); }
-    });
-    $('#dlMain').onclick=()=>downloadCanvas($('#cvMain'),'main.png');
-    $('#dlSub').onclick =()=>downloadCanvas($('#cvSub') ,'sub.png');
-    $('#dlAcc').onclick =()=>downloadCanvas($('#cvAcc') ,'accent.png');
 
-    async function processAndPreview(file){
-      const hexes=currentResultHexes();
-      if(!hexes){ setUpMsg('先に診断を実行して、3色を確定してください。',true); return; }
-      if(!/^image\//i.test(file.type)){ setUpMsg('画像ファイルを選択してください。',true); return; }
-      if(file.size>25*1024*1024){ setUpMsg('画像が大きすぎます（25MB以下推奨）',true); return; }
-
-      try{
-        setUpMsg('背景を削除中…'); prog(3); spinOn();
-        const normalized=await normalizeImageFile(file,1024); prog(20);
-        const cutBlob=await localQuickMatting(normalized);  prog(80);
-
-        const u=URL.createObjectURL(cutBlob); const subject=new Image();
-        await new Promise((res,rej)=>{subject.onload=()=>{URL.revokeObjectURL(u);res()}; subject.onerror=e=>{URL.revokeObjectURL(u);rej(e)}; subject.src=u;});
-        prog(90);
-
-        drawComposite($('#cvMain'),hexes.main,subject);
-        drawComposite($('#cvSub') ,hexes.sub ,subject);
-        drawComposite($('#cvAcc') ,hexes.acc ,subject);
-        prog(100);
-
-        show($('#previewArea'),true);
-        setUpMsg('プレビューを表示しました。各ボタンから保存できます。');
-      }catch(err){
-        console.error(err);
-        setUpMsg('背景除去に失敗しました： '+(err?.message||String(err)).slice(0,300),true);
-      }finally{
-        spinOff(); prog(0);
-        setTimeout(()=>{ upMsg.style.display='none'; },5000);
-      }
+    if (!r.ok) {
+      const text = await r.text();
+      console.error('ClipDrop error', r.status, text);
+      return res.status(502).json({ error: 'CLIPDROP_ERROR', status: r.status, detail: text });
     }
 
-    function currentResultHexes(){
-      const m=$('#mainHex')?.textContent.trim();
-      const s=$('#subHex') ?.textContent.trim();
-      const a=$('#accHex') ?.textContent.trim();
-      if(!m||m==='—'||!s||s==='—'||!a||a==='—') return null;
-      return {main:m,sub:s,acc:a};
-    }
+    const arrayBuffer = await r.arrayBuffer();
+    res.setHeader('Content-Type', 'image/png');
+    res.send(Buffer.from(arrayBuffer));
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'SERVER_ERROR', detail: String(e) });
   }
-});
-</script>
-</body>
-</html>
+}
