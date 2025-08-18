@@ -31,4 +31,140 @@
         <style>
           :host{display:block}
           :root{--ink:#222;--muted:#667085;--bg:#f7f7f9;--panel:#fff;--brand:#2d9cdb}
-          *{box-sizing:bo*
+          *{box-sizing:border-box}
+          header{padding:18px 14px;text-align:center;background:#fff;border-bottom:1px solid #eee}
+          h1{margin:0 0 6px;font-size:20px}
+          .subtitle{font-size:13px;color:#666;line-height:1.5}
+          .app{max-width:1100px;margin:0 auto;padding:16px;display:grid;gap:14px}
+          @media(min-width:900px){.app{grid-template-columns:1.2fr 1fr}}
+          .card{background:var(--panel);border:1px solid #e9eaee;border-radius:12px;padding:14px}
+          h2{margin:0 0 8px;font-size:16px}
+          .hint{font-size:12px;color:var(--muted);display:flex;gap:6px;align-items:flex-start}
+          .hint::before{content:"ⓘ";display:inline-block;line-height:1;border-radius:50%;font-size:12px;color:#4a77a8}
+          .coat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px}
+          .coat{border:1px solid #e6e7eb;border-radius:10px;overflow:hidden;background:#fff;cursor:pointer;min-height:44px}
+          .coat .chip{height:46px}
+          .coat .meta{padding:6px 8px;font-size:13px;display:flex;justify-content:space-between;align-items:center;gap:6px}
+          .coat .meta span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0}
+          .coat small{color:#6c727f}
+          .coat.selected{outline:3px solid #8ccdf5;border-color:#8ccdf5}
+          .traits{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+          .group{border:1px solid #eee;border-radius:10px;padding:8px}
+          .group h3{margin:0 0 6px;font-size:12px;color:#667085}
+          .traits-list label{display:flex;align-items:center;gap:6px;padding:3px 4px;border-radius:6px}
+          .traits-list label:hover{background:#f6f7f9}
+          .actions{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+          .btn{border:0;border-radius:999px;padding:9px 14px;font-weight:700;cursor:pointer;min-height:44px}
+          .primary{background:var(--brand);color:#fff}
+          .ghost{background:#f1f3f5;color:#333}
+          .err{color:#b00020;font-size:13px;margin-top:6px;display:none}
+          .note{color:#b26b00;font-size:12px;margin-top:6px;display:none}
+          .swatches{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+          .sw{border:1px solid #e6e6e6;border-radius:12px;overflow:hidden;background:#fff}
+          .sw .chip{height:70px}
+          .sw .meta{padding:8px 10px}
+          .sw .ttl{font-weight:700;font-size:13px}
+          .rowsm{display:flex;justify-content:space-between;align-items:center;margin-top:2px}
+          .rowsm code{background:#f2f4f7;border-radius:6px;padding:2px 6px}
+          /* preview section */
+          #photoSection .bar{height:4px;border-radius:4px;overflow:hidden;background:#eee;margin-top:8px;display:none}
+          #photoSection .bar > i{display:block;height:100%;width:0;background:var(--brand);transition:width .2s}
+          #photoSection .spin{display:none;margin-top:8px;font-size:13px;color:#555}
+          .drop{margin-top:10px;border:1px dashed #c5ced6;border-radius:10px;padding:12px;color:#465a6c;background:#fafbfc}
+          .drop.drag{background:#eef6fd;border-color:#8ccdf5}
+          @media (max-width: 640px) {
+            .app{grid-template-columns:1fr;padding:10px}
+            .coat-grid{grid-template-columns:repeat(2,1fr);gap:10px}
+            .coat .chip{height:56px}
+            .coat .meta{font-size:12px;padding:5px 7px}
+            .coat .meta small{display:none}
+            .traits{grid-template-columns:1fr;gap:10px}
+            .traits-list label{padding:8px 10px}
+            .traits-list input[type="checkbox"]{transform:scale(1.25)}
+            .btn{width:100%;padding:14px 16px;font-size:16px}
+            .swatches{grid-template-columns:1fr;gap:12px}
+            .sw .chip{height:84px}
+            .sw .meta{padding:10px 12px}
+            .rowsm code{font-size:12px}
+            :host{font-size:16px}
+          }
+        </style>
+
+        <header>
+          <h1>愛犬パーソナルカラー診断</h1>
+          <div class="subtitle">合計27,000通りの毛色×性格の組み合わせから、愛犬に似合う3色を診断します</div>
+        </header>
+
+        <div class="app">
+          <!-- 入力 -->
+          <section class="card">
+            <h2>1) 愛犬の毛色を選択</h2>
+            <p class="hint">1色のみ選択してください。(毛が2色の場合はメインの色を選択)</p>
+            <div id="coatGrid" class="coat-grid" aria-label="毛色一覧"></div>
+
+            <h2 style="margin-top:14px">2) 愛犬の性格を1～3つまで選択</h2>
+            <p class="hint">各カテゴリーから1つずつ選ぶことも、1つのカテゴリーから3つ選ぶこともできます</p>
+            <div class="traits">
+              <div class="group"><h3>内向的</h3><div id="traits-intro" class="traits-list"></div></div>
+              <div class="group"><h3>中立的</h3><div id="traits-neutral" class="traits-list"></div></div>
+              <div class="group"><h3>外交的</h3><div id="traits-extro" class="traits-list"></div></div>
+            </div>
+
+            <div class="actions">
+              <button class="btn primary" id="run">診断する</button>
+              <button class="btn ghost" id="reset">リセット</button>
+            </div>
+            <div id="msg" class="err"></div>
+            <div id="note" class="note">性格は1〜3つまで選択してください。</div>
+          </section>
+
+          <!-- 結果 -->
+          <section class="card">
+            <h2>愛犬パーソナルカラー診断結果</h2>
+            <p class="hint">メイン：毛色ベース / サブ：性格も加味 / アクセント：コントラスト重視</p>
+            <div class="swatches">
+              <div class="sw"><div class="chip" id="mainChip" style="background:#fff"></div><div class="meta"><div class="ttl">メイン</div><div class="rowsm"><span id="mainName">—</span><code id="mainHex">—</code></div></div></div>
+              <div class="sw"><div class="chip" id="subChip"  style="background:#fff"></div><div class="meta"><div class="ttl">サブ</div><div class="rowsm"><span id="subName">—</span><code id="subHex">—</code></div></div></div>
+              <div class="sw"><div class="chip" id="accChip"  style="background:#fff"></div><div class="meta"><div class="ttl">アクセント</div><div class="rowsm"><span id="accName">—</span><code id="accHex">—</code></div></div></div>
+            </div>
+          </section>
+        </div>
+
+        <!-- 写真プレビュー -->
+        <section class="card" id="photoSection" style="margin:16px auto;max-width:1100px;">
+          <h2>愛犬写真の背景除去＆3色プレビュー</h2>
+          <p class="hint">画像をアップロード/ドロップ/ペーストで受け取り、<b>「診断カラー背景の画像を確認する」ボタンでプレビュー開始</b>（この版はローカル処理のみ）</p>
+
+          <input id="upload" type="file" accept="image/*" />
+          <div class="drop" id="drop">ここに画像をドラッグ＆ドロップ、または画像を貼り付け（Ctrl/⌘+V）</div>
+
+          <div class="actions" id="preActions" style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
+            <button class="btn primary" id="previewBtn" disabled>診断カラー背景の画像を確認する</button>
+          </div>
+
+          <div id="upMsg" class="note" style="margin-top:8px;display:none;"></div>
+          <div class="bar" id="bar"><i></i></div>
+          <div class="spin" id="spin">処理中…</div>
+
+          <div id="previewArea" style="display:none; margin-top:12px;">
+            <div style="display:grid; gap:12px;">
+              <canvas id="cvMain" width="900" height="900" style="max-width:100%;border:1px solid #eee;border-radius:8px;"></canvas>
+              <canvas id="cvSub"  width="900" height="900" style="max-width:100%;border:1px solid #eee;border-radius:8px;"></canvas>
+              <canvas id="cvAcc"  width="900" height="900" style="max-width:100%;border:1px solid #eee;border-radius:8px;"></canvas>
+            </div>
+            <div class="actions" style="margin-top:10px">
+              <button class="btn" id="dlMain" style="padding:10px 14px; border-radius:8px; border:1px solid #ddd;">メイン色背景をダウンロード</button>
+              <button class="btn" id="dlSub"  style="padding:10px 14px; border-radius:8px; border:1px solid #ddd;">サブ色背景をダウンロード</button>
+              <button class="btn" id="dlAcc"  style="padding:10px 14px; border-radius:8px; border:1px solid #ddd;">アクセント色背景をダウンロード</button>
+            </div>
+          </div>
+        </section>
+      `;
+
+      // ---------- ヘルパ ----------
+      const $  = (s)=>root.querySelector(s);
+      const $$ = (s)=>[...root.querySelectorAll(s)];
+      const show = (el,yn=true)=>{ el.style.display = yn?'block':'none'; };
+
+      // ---------- データ ----------
+      const PALETTE=[{"hex":"#F5F5DC","cat":"ベージュ","tone":"ライト","name":"ベージュVL"},{"hex":"#E4CDA7","cat":"ベージュ","tone":"ライト","name":"ベージュL"},{"hex":"#D2B48C","cat":"ベージュ","tone":"ミドル","name":"タン"},{"hex":"#C3A276","cat":"ベージュ","tone":"ダーク","name":"キャメル"},{"hex":"#FFFF99","cat":"黄色","tone":"ライト","name":"ライトイエロー"},{"hex":"#FFFF00","cat":"黄色","tone":"ミドル","name":"イエロー"},{"hex":"#DFFF00","cat":"黄色","tone":"ミドル","name":"ライムイエロー"},{"hex":"#FFEF00","cat":"黄色","tone":"ミドル","name":"カナリア"},{"hex":"#FFD166","cat":"黄色","tone":"ミドル","name":"ハニー"},{"hex":"#F2C94C","cat":"黄色","tone":"ミドル","name":"ゴールデン"},{"hex":"#FFBF00","cat":"オレンジ","tone":"ミドル","name":"アンバー"},{"hex":"#FF7F00","cat":"オレンジ","tone":"ミドル","name":"オレンジ"},{"hex":"#FF6700","cat":"オレンジ","tone":"ミドル","name":"タンジェリン"},{"hex":"#FF6347","cat":"オレンジ","tone":"ミドル","name":"トマト"},{"hex":"#FADADD","cat":"ピンク","tone":"ライト","name":"ローズミスト"},{"hex":"#FBCEB1","cat":"ピンク","tone":"ライト","name":"ピーチ"},{"hex":"#FFA8A8","cat":"ピンク","tone":"ライト","name":"ベビーピンク"},{"hex":"#F88379","cat":"ピンク","tone":"ミドル","name":"コーラル"},{"hex":"#E07A5F","cat":"ピンク","tone":"ミドル","name":"テラコッタP"},{"hex":"#FF69B4","cat":"ピンク","tone":"ミドル","name":"ホットピンク"},{"hex":"#FF4F9A","cat":"ピンク","tone":"ミドル","name":"ビビッドピンク"},{"hex":"#FF00FF","cat":"ピンク","tone":"ミドル","name":"マゼンタ"},{"hex":"#FF1493","cat":"ピンク","tone":"ミドル","name":"ディープピンク"},{"hex":"#C21E56","cat":"赤","tone":"ミドル","name":"ルビー"},{"hex":"#D81B60","cat":"赤","tone":"ミドル","name":"ラズベリー"},{"hex":"#FF0000","cat":"赤","tone":"ミドル","name":"レッド"},{"hex":"#800020","cat":"赤","tone":"ダーク","name":"バーガンディ"},{"hex":"#98FFCC","cat":"緑","tone":"ライト","name":"ミント"},{"hex":"#93C572","cat":"緑","tone":"ライト","name":"ピスタチオ"},{"hex":"#00FF7F","cat":"緑","tone":"ライト","name":"スプリングG"},{"hex":"#00FF00","cat":"緑","tone":"ライト","name":"ライム"},{"hex":"#4CBB17","cat":"緑","tone":"ライト","name":"ケリー"},{"hex":"#00A550","cat":"緑","tone":"ライト","name":"エメラルド"},{"hex":"#6B8E23","cat":"緑","tone":"ミドル","name":"オリーブドラブ"},{"hex":"#228B22","cat":"緑","tone":"ミドル","name":"フォレスト"},{"hex":"#556B2F","cat":"緑","tone":"ミドル","name":"ダークオリーブ"},{"hex":"#4B5320","cat":"緑","tone":"ダーク","name":"アーミーG"},{"hex":"#AFEEEE","cat":"青","tone":"ライト","name":"パウダーブルー"},{"hex":"#ADD8E6","cat":"青","tone":"ライト","name":"ライトブルー"},{"hex":"#00FFFF","cat":"青","tone":"ライト","name":"シアン"},{"h]()
