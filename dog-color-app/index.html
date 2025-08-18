@@ -167,4 +167,413 @@
       const show = (el,yn=true)=>{ el.style.display = yn?'block':'none'; };
 
       // ---------- データ ----------
-      const PALETTE=[{"hex":"#F5F5DC","cat":"ベージュ","tone":"ライト","name":"ベージュVL"},{"hex":"#E4CDA7","cat":"ベージュ","tone":"ライト","name":"ベージュL"},{"hex":"#D2B48C","cat":"ベージュ","tone":"ミドル","name":"タン"},{"hex":"#C3A276","cat":"ベージュ","tone":"ダーク","name":"キャメル"},{"hex":"#FFFF99","cat":"黄色","tone":"ライト","name":"ライトイエロー"},{"hex":"#FFFF00","cat":"黄色","tone":"ミドル","name":"イエロー"},{"hex":"#DFFF00","cat":"黄色","tone":"ミドル","name":"ライムイエロー"},{"hex":"#FFEF00","cat":"黄色","tone":"ミドル","name":"カナリア"},{"hex":"#FFD166","cat":"黄色","tone":"ミドル","name":"ハニー"},{"hex":"#F2C94C","cat":"黄色","tone":"ミドル","name":"ゴールデン"},{"hex":"#FFBF00","cat":"オレンジ","tone":"ミドル","name":"アンバー"},{"hex":"#FF7F00","cat":"オレンジ","tone":"ミドル","name":"オレンジ"},{"hex":"#FF6700","cat":"オレンジ","tone":"ミドル","name":"タンジェリン"},{"hex":"#FF6347","cat":"オレンジ","tone":"ミドル","name":"トマト"},{"hex":"#FADADD","cat":"ピンク","tone":"ライト","name":"ローズミスト"},{"hex":"#FBCEB1","cat":"ピンク","tone":"ライト","name":"ピーチ"},{"hex":"#FFA8A8","cat":"ピンク","tone":"ライト","name":"ベビーピンク"},{"hex":"#F88379","cat":"ピンク","tone":"ミドル","name":"コーラル"},{"hex":"#E07A5F","cat":"ピンク","tone":"ミドル","name":"テラコッタP"},{"hex":"#FF69B4","cat":"ピンク","tone":"ミドル","name":"ホットピンク"},{"hex":"#FF4F9A","cat":"ピンク","tone":"ミドル","name":"ビビッドピンク"},{"hex":"#FF00FF","cat":"ピンク","tone":"ミドル","name":"マゼンタ"},{"hex":"#FF1493","cat":"ピンク","tone":"ミドル","name":"ディープピンク"},{"hex":"#C21E56","cat":"赤","tone":"ミドル","name":"ルビー"},{"hex":"#D81B60","cat":"赤","tone":"ミドル","name":"ラズベリー"},{"hex":"#FF0000","cat":"赤","tone":"ミドル","name":"レッド"},{"hex":"#800020","cat":"赤","tone":"ダーク","name":"バーガンディ"},{"hex":"#98FFCC","cat":"緑","tone":"ライト","name":"ミント"},{"hex":"#93C572","cat":"緑","tone":"ライト","name":"ピスタチオ"},{"hex":"#00FF7F","cat":"緑","tone":"ライト","name":"スプリングG"},{"hex":"#00FF00","cat":"緑","tone":"ライト","name":"ライム"},{"hex":"#4CBB17","cat":"緑","tone":"ライト","name":"ケリー"},{"hex":"#00A550","cat":"緑","tone":"ライト","name":"エメラルド"},{"hex":"#6B8E23","cat":"緑","tone":"ミドル","name":"オリーブドラブ"},{"hex":"#228B22","cat":"緑","tone":"ミドル","name":"フォレスト"},{"hex":"#556B2F","cat":"緑","tone":"ミドル","name":"ダークオリーブ"},{"hex":"#4B5320","cat":"緑","tone":"ダーク","name":"アーミーG"},{"hex":"#AFEEEE","cat":"青","tone":"ライト","name":"パウダーブルー"},{"hex":"#ADD8E6","cat":"青","tone":"ライト","name":"ライトブルー"},{"hex":"#00FFFF","cat":"青","tone":"ライト","name":"シアン"},{"h]()
+      const PALETTE=[{"hex":"#F5F5DC","cat":"ベージュ","tone":"ライト","name":"ベージュVL"},{"hex":"#E4CDA7","cat":"ベージュ","tone":"ライト","name":"ベージュL"},{"hex":"#D2B48C","cat":"ベージュ","tone":"ミドル","name":"タン"},{"hex":"#C3A276","cat":"ベージュ","tone":"ダーク","name":"キャメル"},{"hex":"#FFFF99","cat":"黄色","tone":"ライト","name":"ライトイエロー"},{"hex":"#FFFF00","cat":"黄色","tone":"ミドル","name":"イエロー"},{"hex":"#DFFF00","cat":"黄色","tone":"ミドル","name":"ライムイエロー"},{"hex":"#FFEF00","cat":"黄色","tone":"ミドル","name":"カナリア"},{"hex":"#FFD166","cat":"黄色","tone":"ミドル","name":"ハニー"},{"hex":"#F2C94C","cat":"黄色","tone":"ミドル","name":"ゴールデン"},{"hex":"#FFBF00","cat":"オレンジ","tone":"ミドル","name":"アンバー"},{"hex":"#FF7F00","cat":"オレンジ","tone":"ミドル","name":"オレンジ"},{"hex":"#FF6700","cat":"オレンジ","tone":"ミドル","name":"タンジェリン"},{"hex":"#FF6347","cat":"オレンジ","tone":"ミドル","name":"トマト"},{"hex":"#FADADD","cat":"ピンク","tone":"ライト","name":"ローズミスト"},{"hex":"#FBCEB1","cat":"ピンク","tone":"ライト","name":"ピーチ"},{"hex":"#FFA8A8","cat":"ピンク","tone":"ライト","name":"ベビーピンク"},{"hex":"#F88379","cat":"ピンク","tone":"ミドル","name":"コーラル"},{"hex":"#E07A5F","cat":"ピンク","tone":"ミドル","name":"テラコッタP"},{"hex":"#FF69B4","cat":"ピンク","tone":"ミドル","name":"ホットピンク"},{"hex":"#FF4F9A","cat":"ピンク","tone":"ミドル","name":"ビビッドピンク"},{"hex":"#FF00FF","cat":"ピンク","tone":"ミドル","name":"マゼンタ"},{"hex":"#FF1493","cat":"ピンク","tone":"ミドル","name":"ディープピンク"},{"hex":"#C21E56","cat":"赤","tone":"ミドル","name":"ルビー"},{"hex":"#D81B60","cat":"赤","tone":"ミドル","name":"ラズベリー"},{"hex":"#FF0000","cat":"赤","tone":"ミドル","name":"レッド"},{"hex":"#800020","cat":"赤","tone":"ダーク","name":"バーガンディ"},{"hex":"#98FFCC","cat":"緑","tone":"ライト","name":"ミント"},{"hex":"#93C572","cat":"緑","tone":"ライト","name":"ピスタチオ"},{"hex":"#00FF7F","cat":"緑","tone":"ライト","name":"スプリングG"},{"hex":"#00FF00","cat":"緑","tone":"ライト","name":"ライム"},{"hex":"#4CBB17","cat":"緑","tone":"ライト","name":"ケリー"},{"hex":"#00A550","cat":"緑","tone":"ライト","name":"エメラルド"},{"hex":"#6B8E23","cat":"緑","tone":"ミドル","name":"オリーブドラブ"},{"hex":"#228B22","cat":"緑","tone":"ミドル","name":"フォレスト"},{"hex":"#556B2F","cat":"緑","tone":"ミドル","name":"ダークオリーブ"},{"hex":"#4B5320","cat":"緑","tone":"ダーク","name":"アーミーG"},{"hex":"#AFEEEE","cat":"青","tone":"ライト","name":"パウダーブルー"},{"hex":"#ADD8E6","cat":"青","tone":"ライト","name":"ライトブルー"},{"hex":"#00FFFF","cat":"青","tone":"ライト","name":"シアン"},{"hex":"#2D9CDB","cat":"青","tone":"ライト","name":"スカイ"},{"hex":"#4682B4","cat":"青","tone":"ミドル","name":"スチール"},{"hex":"#2EC4B6","cat":"青","tone":"ミドル","name":"ターコイズ"},{"hex":"#1B7F79","cat":"青","tone":"ミドル","name":"ティール"},{"hex":"#2F5DCC","cat":"青","tone":"ミドル","name":"ロイヤル"},{"hex":"#0047AB","cat":"青","tone":"ミドル","name":"コバルト"},{"hex":"#0000FF","cat":"青","tone":"ミドル","name":"ブルー"},{"hex":"#1F2A44","cat":"青","tone":"ダーク","name":"ミッドナイト"},{"hex":"#191970","cat":"青","tone":"ダーク","name":"ネイビー"},{"hex":"#CCCCFF","cat":"紫","tone":"ライト","name":"ペールラベンダー"},{"hex":"#C8A2C8","cat":"紫","tone":"ライト","name":"ライラック"},{"hex":"#B57EDC","cat":"紫","tone":"ミドル","name":"ラベンダー"},{"hex":"#8E4585","cat":"紫","tone":"ミドル","name":"プラム"},{"hex":"#8F00FF","cat":"紫","tone":"ミドル","name":"エレクトリックP"},{"hex":"#4B0082","cat":"紫","tone":"ミドル","name":"インディゴ"},{"hex":"#C19A6B","cat":"ブラウン","tone":"ライト","name":"ライトブラウン"},{"hex":"#B6864D","cat":"ブラウン","tone":"ライト","name":"ミドルブラウン"},{"hex":"#CD7F32","cat":"ブラウン","tone":"ミドル","name":"ブロンズ"},{"hex":"#A0522D","cat":"ブラウン","tone":"ミドル","name":"セピア"},{"hex":"#C04000","cat":"ブラウン","tone":"ダーク","name":"ラセット"},{"hex":"#722F37","cat":"ブラウン","tone":"ダーク","name":"マルーンB"},{"hex":"#483C32","cat":"ブラウン","tone":"ダーク","name":"ダークトープ"},{"hex":"#D6D6D6","cat":"グレー","tone":"ライト","name":"ライトグレー"},{"hex":"#A9A9A9","cat":"グレー","tone":"ライト","name":"ダークグレー(明)"},{"hex":"#808080","cat":"グレー","tone":"ミドル","name":"グレー"},{"hex":"#696969","cat":"グレー","tone":"ミドル","name":"ディムグレー"},{"hex":"#708090","cat":"グレー","tone":"ミドル","name":"スレートグレー"},{"hex":"#36454F","cat":"グレー","tone":"ダーク","name":"チャコール"},{"hex":"#1E1E1E","cat":"グレー","tone":"ダーク","name":"ジェット"},{"hex":"#000000","cat":"グレー","tone":"ダーク","name":"ブラック"}];
+
+      const COATS=[["ホワイト","#FFFFFF"],["クリーム","#FFFDD0"],["フォーン","#C3A276"],["タン","#C49A6C"],["セーブル","#7B5B3E"],["アプリコット","#E6A571"],["イエロー","#FFD54F"],["ゴールド","#FFD700"],["レッド","#C04000"],["マホガニー","#722F37"],["マール","#7A92A6"],["ブルー","#5A7FA3"],["シルバー","#A9A9A9"],["ウルフセーブル","#8E8E86"],["グレー","#808080"],["ライトブラウン","#B6864D"],["ブラウン","#8B5A2B"],["ブリンドル","#5A4636"],["ダークチョコレート","#3A2C2A"],["ブラック","#000000"]];
+
+      const TRAITS={
+        intro:["繊細","慎重","警戒心が強い","寂しがり屋","おだやか","マイペース","独立心が強い","頑固"],
+        neutral:["賢い","集中力が高い","クール","素直","好奇心旺盛","甘えん坊","順応性が高い"],
+        extro:["勇敢","活発","お調子者","リーダー気質","社交的"]
+      };
+
+      // ---------- 色ユーティリティ ----------
+      const hexToRgb=h=>{const m=h.replace('#','');return{r:parseInt(m.slice(0,2),16),g:parseInt(m.slice(2,4),16),b:parseInt(m.slice(4,6),16)}};
+      const rgbToHue=({r,g,b})=>{r/=255;g/=255;b/=255;const mx=Math.max(r,g,b),mn=Math.min(r,g,b),d=mx-mn;if(d===0)return 0;let h=mx===r?(g-b)/d:mx===g?(b-r)/d+2:(r-g)/d+4;return (h*60+360)%360};
+      const hueOf=hex=>rgbToHue(hexToRgb(hex));
+      const hueDist=(a,b)=>{const d=Math.abs(a-b)%360;return d>180?360-d:d};
+      function rgbToXyz(r,g,b){r/=255;g/=255;b/=255;r=r>0.04045?((r+0.055)/1.055)**2.4:r/12.92;g=g>0.04045?((g+0.055)/1.055)**2.4:g/12.92;b=b>0.04045?((b+0.055)/1.055)**2.4:b/12.92;const x=r*0.4124+g*0.3576+b*0.1805;const y=r*0.2126+g*0.7152+b*0.0722;const z=r*0.0193+g*0.1192+b*0.9505;return{x:x*100,y:y*100,z:z*100}}
+      function xyzToLab(x,y,z){const xr=x/95.047,yr=y/100,zr=z/108.883;const f=t=>t>0.008856?Math.cbrt(t):(7.787*t+16/116);const fx=f(xr),fy=f(yr),fz=f(zr);return{L:116*fy-16,a:500*(fx-fy),b:200*(fy-fz)}}
+      const hexToLab=hex=>{const {r,g,b}=hexToRgb(hex);const {x,y,z}=rgbToXyz(r,g,b);return xyzToLab(x,y,z)};
+      const labChroma=hex=>{const L=hexToLab(hex);return Math.hypot(L.a,L.b)};
+
+      // ---------- センチメント ----------
+      const traitGroup={}; 
+      TRAITS.intro.forEach(t=>traitGroup[t]="内向");
+      TRAITS.neutral.forEach(t=>traitGroup[t]="中立");
+      TRAITS.extro.forEach(t=>traitGroup[t]="外交");
+      const sentiment=(traits)=>{let s=0,n=0,e=0;traits.forEach(t=>{const g=traitGroup[t];if(g==="内向")s++;else if(g==="外交")e++;else n++;});if(e>=s&&e>=n)return"外交";if(s>=n&&s>=e)return"内向";return"中立"};
+      const tonePrefWeight={内向:{ライト:1.0,ミドル:0.7,ダーク:0.3},中立:{ライト:0.7,ミドル:1.0,ダーク:0.7},外交:{ライト:0.4,ミドル:0.9,ダーク:1.0}};
+      const TRAIT_HUE_TILT={
+        "繊細":[330,285],"慎重":[30,210],"警戒心が強い":[30,210],
+        "寂しがり屋":[330,270],"おだやか":[90,40],"マイペース":[40,210],
+        "独立心が強い":[270,210],"頑固":[20,0],
+        "賢い":[210,220],"集中力が高い":[210,200],"クール":[210,240],
+        "素直":[120,60],"好奇心旺盛":[60,330],"甘えん坊":[330,300],
+        "順応性が高い":[40,120],
+        "勇敢":[0,30],"活発":[30,60],"お調子者":[60,330],
+        "リーダー気質":[270,0],"社交的":[60,30]
+      };
+      const hueBiasScore=(H,prefs)=>{if(!prefs||!prefs.length)return 0;let best=0;prefs.forEach(h=>{const d=hueDist(H,h);best=Math.max(best,Math.exp(-(d*d)/(2*25*25)));});return best};
+      const seedFrom=(str)=>{let h=2166136261>>>0;for(let i=0;i<str.length;i++){h^=str.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0};
+      const rng=(seed)=>{let s=seed>>>0;return ()=>{s=(s*1664525+1013904223)>>>0;return (s&0xffff)/0x10000}};
+
+      function pickColors(coatName, traits){
+        const coatHex = (new Map(COATS)).get(coatName) || "#FFFFFF";
+        const coatHue = hueOf(coatHex);
+        const senti = sentiment(traits);
+        const r = rng(seedFrom(coatName + "|" + traits.slice().sort().join(",")));
+        const favorGray = ["クール","賢い","集中力が高い"].some(t => traits.includes(t));
+        const comp = (coatHue+180)%360;
+        const splits = [(coatHue+150)%360,(coatHue+210)%360];
+        const splitPrimary = splits[Math.floor(r()*splits.length)];
+
+        const scored = PALETTE.map(c=>{
+          const H = hueOf(c.hex), L = hexToLab(c.hex).L, C = labChroma(c.hex);
+          const sAnalog = Math.exp(-(hueDist(H,coatHue)**2)/(2*35*35));
+          const sComp   = Math.exp(-(hueDist(H,comp)**2)/(2*25*25));
+          const sSplit  = Math.max(
+            Math.exp(-(hueDist(H,splitPrimary)**2)/(2*22*22)),
+            Math.exp(-(hueDist(H,(splitPrimary===splits[0]?splits[1]:splits[0]))**2)/(2*25*25))
+          );
+
+          let bias=0; traits.forEach(t=>{ bias += hueBiasScore(H, TRAIT_HUE_TILT[t]); });
+          bias /= Math.max(1, traits.length);
+
+          const toneW = (tonePrefWeight[senti][c.tone]||0.6);
+
+          const mainScore = (1.2*sAnalog + 0.6*bias) * (0.8 + 0.4*toneW);
+          const subBase   = (0.9*sAnalog + 0.9*bias) * (0.7 + 0.6*toneW);
+
+          const grayPenalty = Math.max(0, (20 - Math.min(C,20)) / 20);
+          const grayFactor =
+            favorGray ? (1 - 0.25*grayPenalty) :
+            senti==="外交" ? (1 - 0.35*grayPenalty) :
+            senti==="中立" ? (1 - 0.55*grayPenalty) :
+                             (1 - 0.70*grayPenalty);
+
+          const accentBase =
+            (senti==="外交" ? (0.9*sSplit + 1.05*sComp) :
+             senti==="内向" ? (1.1*sSplit + 0.6*sComp) :
+                              (1.0*sSplit + 0.8*sComp))
+            + 0.55*bias;
+
+          const wiggle = 0.96 + 0.08*r();
+
+          return {c, H, L, mainScore, subBase, accentRaw: accentBase*grayFactor*wiggle};
+        });
+
+        // MAIN
+        const mainList=[...scored].sort((a,b)=>b.mainScore-a.mainScore);
+        const mTop=mainList[0].mainScore, mNear=mainList.filter(x=>x.mainScore>=mTop*0.98);
+        const main=(mNear[Math.floor(r()*mNear.length)]||mainList[0]).c;
+
+        // SUB
+        const mainHue=hueOf(main.hex), mainL=hexToLab(main.hex).L;
+        const subList=scored.filter(x=>x.c.hex!==main.hex).map(x=>{
+            const huePenalty = Math.exp(-(hueDist(x.H, mainHue)**2)/(2*20*20));
+            const lightPenalty = Math.exp(-((x.L-mainL)**2)/(2*8*8));
+            const diversityPenalty = 0.35*huePenalty + 0.25*lightPenalty;
+            return {x, score: x.subBase*(1 - diversityPenalty)};
+          }).sort((a,b)=>b.score-a.score);
+        const sTop=subList[0].score, sNear=subList.filter(s=>s.score>=sTop*0.97);
+        const sub=(sNear[Math.floor(r()*sNear.length)]||subList[0]).x.c;
+
+        // ACCENT
+        const usedCats=new Set([main.cat||main.c?.cat, sub.cat||sub.c?.cat].filter(Boolean));
+        const subHue=hueOf(sub.hex);
+        const accentList=scored
+          .filter(x=>x.c.hex!==main.hex && x.c.hex!==sub.hex)
+          .map(x=>{
+            const nearMain = Math.exp(-(hueDist(x.H, mainHue)**2)/(2*18*18));
+            const nearSub  = Math.exp(-(hueDist(x.H, subHue )**2)/(2*18*18));
+            let score = x.accentRaw * (1 - (0.35*nearMain + 0.25*nearSub));
+            if(usedCats.has(x.c.cat)) score *= 0.82;
+            if(x.c.cat==="青") score *= 0.93;
+            if(x.c.cat==="グレー") score *= 0.85;
+            return {x, score};
+          })
+          .sort((a,b)=>b.score-a.score);
+        const aTop=accentList[0].score, aNear=accentList.filter(s=>s.score>=aTop*0.96);
+        const accent=(aNear[Math.floor(r()*aNear.length)]||accentList[0]).x.c;
+
+        return {main, sub, accent};
+      }
+
+      // ---------- UI描画 ----------
+      const coatGrid=$('#coatGrid');
+      let selectedCoat=null;
+      (function renderCoats(){
+        coatGrid.innerHTML="";
+        COATS.forEach(([name,hex])=>{
+          const card=document.createElement("button");
+          card.type="button"; card.className="coat";
+          card.innerHTML=`<div class="chip" style="background:${hex}"></div>
+                          <div class="meta"><span>${name}</span><small>${hex}</small></div>`;
+          card.addEventListener("click",()=>{
+            selectedCoat=name;
+            $$('.coat').forEach(c=>c.classList.remove("selected"));
+            card.classList.add("selected");
+          });
+          coatGrid.appendChild(card);
+        });
+      })();
+
+      function addTraitList(containerId, list){
+        const el=$('#'+containerId);
+        list.forEach(t=>{
+          const wrap=document.createElement("label");
+          const cb=document.createElement("input"); cb.type="checkbox"; cb.value=t;
+          cb.addEventListener("change",limitTraits);
+          wrap.appendChild(cb); wrap.appendChild(document.createTextNode(" "+t));
+          el.appendChild(wrap);
+        });
+      }
+      addTraitList("traits-intro", TRAITS.intro);
+      addTraitList("traits-neutral", TRAITS.neutral);
+      addTraitList("traits-extro", TRAITS.extro);
+
+      const selectedTraits=()=> $$('.traits input[type=checkbox]:checked').map(i=>i.value);
+      function limitTraits(e){
+        const checks=$$('.traits input[type=checkbox]');
+        const checked=checks.filter(c=>c.checked);
+        const note=$('#note');
+        if(checked.length>3){
+          e.target.checked=false;
+          show(note,true);
+          setTimeout(()=>show(note,false),1400);
+        }
+      }
+
+      function setSw(prefix, color){
+        $('#'+prefix+"Chip").style.background=color.hex;
+        $('#'+prefix+"Hex").textContent=color.hex;
+        $('#'+prefix+"Name").textContent=color.name;
+      }
+
+      $('#run').addEventListener("click", ()=>{
+        const msg=$('#msg');
+        const traits=selectedTraits();
+        if(!selectedCoat){ msg.textContent="毛色を1つ選択してください。"; show(msg,true); return; }
+        if(traits.length===0){ msg.textContent="性格は1〜3つまで選択してください。"; show(msg,true); return; }
+        show(msg,false);
+        try{
+          const res=pickColors(selectedCoat, traits);
+          setSw("main",res.main); setSw("sub",res.sub); setSw("acc",res.accent);
+        }catch(e){
+          console.error(e);
+          msg.textContent="エラー：内部データに不整合があります。";
+          show(msg,true);
+        }
+      });
+
+      $('#reset').addEventListener("click", ()=>{
+        selectedCoat=null;
+        $$('.coat').forEach(c=>c.classList.remove("selected"));
+        $$('.traits input[type=checkbox]').forEach(c=>c.checked=false);
+        ["main","sub","acc"].forEach(k=>{
+          $('#'+k+"Chip").style.background="#fff";
+          $('#'+k+"Hex").textContent="—";
+          $('#'+k+"Name").textContent="—";
+        });
+        show($('#msg'),false);
+      });
+
+      // ---------- 写真処理（ローカルのみ／ボタン起動） ----------
+      const upMsg = $('#upMsg'); const bar=$('#bar'); const barI=bar.querySelector('i'); const spin=$('#spin');
+      const previewBtn = $('#previewBtn');
+      let pendingFile = null;  // ボタン押下時に処理するファイル
+
+      let _msgBusy=false;
+      const setUpMsg=(text,isErr=false)=>{
+        if(_msgBusy) return; _msgBusy=true;
+        try{
+          upMsg.style.display='block';
+          upMsg.style.color=isErr?'#b00020':'#b26b00';
+          const s=String(text||''); upMsg.textContent = s.length>400? s.slice(0,400)+'…' : s;
+        }finally{ _msgBusy=false; }
+      };
+      const prog=(p)=>{ bar.style.display='block'; barI.style.width=(Math.max(0,Math.min(100,Number(p)||0)))+'%'; };
+      const spinOn=()=>{ spin.style.display='block'; };
+      const spinOff=()=>{ spin.style.display='none'; bar.style.display='none'; };
+
+      function currentResultHexes(){
+        const m=$('#mainHex')?.textContent.trim();
+        const s=$('#subHex') ?.textContent.trim();
+        const a=$('#accHex') ?.textContent.trim();
+        if(!m||m==='—'||!s||s==='—'||!a||a==='—') return null;
+        return {main:m,sub:s,acc:a};
+      }
+
+      // 画像受付（アップロード／D&D／ペースト）→ ここでは処理せず pending に保持
+      function acceptIncomingFile(file){
+        if(!file) return;
+        if(!/^image\//i.test(file.type)){ setUpMsg('画像ファイルを選択してください。',true); return; }
+        if(file.size>25*1024*1024){ setUpMsg('画像が大きすぎます（25MB以下推奨）',true); return; }
+        pendingFile = file;
+        previewBtn.disabled = false;
+        setUpMsg(`「${file.name||'画像'}」を受け取りました。『診断カラー背景の画像を確認する』を押すとプレビューします。`);
+      }
+
+      $('#upload')?.addEventListener('change', e=>{
+        acceptIncomingFile(e.target.files?.[0]);
+      });
+
+      const drop=$('#drop');
+      if(drop){
+        ['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('drag');},{passive:false}));
+        ['dragleave','dragend','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('drag');},{passive:false}));
+        drop.addEventListener('drop',e=>{
+          const f=[...e.dataTransfer.files].find(f=>/^image\//.test(f.type));
+          acceptIncomingFile(f);
+        });
+      }
+
+      root.addEventListener('paste',e=>{
+        const it=[...(e.clipboardData?.items||[])].find(i=>/^image\//.test(i.type));
+        if(it){ const f=it.getAsFile(); acceptIncomingFile(f); }
+      });
+
+      // プレビュー開始ボタン
+      previewBtn.addEventListener('click', async ()=>{
+        if(!pendingFile){ setUpMsg('先に画像を選択/ドロップ/ペーストしてください。',true); return; }
+        const hexes=currentResultHexes();
+        if(!hexes){ setUpMsg('先に診断を実行して、3色を確定してください。',true); return; }
+
+        // （将来のクレジット判定はここで実施予定）
+        // if(!hasCredit()) { showCreditDialog(); return; }
+
+        previewBtn.disabled = true;
+        try{
+          await processAndPreview(pendingFile);
+        }finally{
+          previewBtn.disabled = false;
+        }
+      });
+
+      $('#dlMain')?.addEventListener('click',()=>downloadCanvas($('#cvMain'),'main.png'));
+      $('#dlSub') ?.addEventListener('click',()=>downloadCanvas($('#cvSub') ,'sub.png'));
+      $('#dlAcc') ?.addEventListener('click',()=>downloadCanvas($('#cvAcc') ,'accent.png'));
+
+      async function normalizeImageFile(file,maxSide=1024){
+        let bmp;
+        try { bmp = await createImageBitmap(file,{imageOrientation:'from-image',premultiplyAlpha:'premultiply'}); }
+        catch{
+          const u=URL.createObjectURL(file);
+          bmp = await new Promise((res,rej)=>{
+            const im=new Image();
+            im.onload=()=>{URL.revokeObjectURL(u);res(im)};
+            im.onerror=e=>{URL.revokeObjectURL(u);rej(e)};
+            im.src=u;
+          });
+        }
+        const scale=Math.min(1,maxSide/Math.max(bmp.width,bmp.height));
+        if(scale===1) return file;
+        const w=Math.round(bmp.width*scale),h=Math.round(bmp.height*scale);
+        const cv=document.createElement('canvas'); cv.width=w; cv.height=h;
+        const ctx=cv.getContext('2d'); ctx.imageSmoothingQuality='high';
+        ctx.drawImage(bmp,0,0,w,h);
+        const blob=await new Promise(r=>cv.toBlob(r,'image/jpeg',0.92));
+        return new File([blob],'image.jpg',{type:'image/jpeg',lastModified:Date.now()});
+      }
+
+      async function localQuickMatting(fileOrImage){
+        const img = fileOrImage instanceof Image ? fileOrImage :
+          await (async()=>{
+            const u=URL.createObjectURL(fileOrImage);
+            const im=new Image();
+            await new Promise((res,rej)=>{
+              im.onload=()=>{URL.revokeObjectURL(u);res()};
+              im.onerror=e=>{URL.revokeObjectURL(u);rej(e)};
+              im.src=u;
+            });
+            return im;
+          })();
+
+        const maxSide=1024, s=Math.min(1,maxSide/Math.max(img.width,img.height));
+        const W=Math.round(img.width*s),H=Math.round(img.height*s);
+        const cv=document.createElement('canvas'); cv.width=W; cv.height=H;
+        const ctx=cv.getContext('2d'); ctx.imageSmoothingQuality='high';
+        ctx.drawImage(img,0,0,W,H);
+        const imgd=ctx.getImageData(0,0,W,H), d=imgd.data;
+
+        const dx=Math.max(2,Math.floor(W*0.05)), dy=Math.max(2,Math.floor(H*0.05));
+        function avg(x0,y0,x1,y1){let r=0,g=0,b=0,n=0;for(let y=y0;y<y1;y+=2){let off=(y*W+x0)*4;for(let x=x0;x<x1;x+=2){r+=d[off];g+=d[off+1];b+=d[off+2];n++;off+=8}}return[r/n,g/n,b/n]}
+        const corners=[avg(0,0,dx,dy),avg(W-dx,0,W,dy),avg(0,H-dy,dx,H),avg(W-dx,H-dy,W,H)];
+        const bg=[0,1,2].map(i=>Math.round(corners.reduce((s,v)=>s+v[i],0)/corners.length));
+        const bgL=0.2126*bg[0]+0.7152*bg[1]+0.0722*bg[2];
+
+        const th = bgL>180?48:36;
+        const soft = th*1.6;
+
+        for(let i=0;i<d.length;i+=4){
+          const dr=d[i]-bg[0], dg=d[i+1]-bg[1], db=d[i+2]-bg[2];
+          const dist=Math.sqrt(dr*dr+dg*dg+db*db);
+          let a=255;
+          if(dist<=th){ a=0; }
+          else if(dist<th*1.2){ a=Math.round(255*(dist-th)/(th*0.2)); }
+          else if(dist<soft){ a=Math.round(255*(dist-th)/(soft-th)); }
+          d[i+3]=a;
+        }
+
+        ctx.putImageData(imgd,0,0);
+        const out=await new Promise(r=>cv.toBlob(r,'image/png'));
+        return out;
+      }
+
+      function drawComposite(canvas,bgHex,subjectImg){
+        const ctx=canvas.getContext('2d'), W=canvas.width,H=canvas.height;
+        ctx.clearRect(0,0,W,H);
+        ctx.fillStyle=bgHex; ctx.fillRect(0,0,W,H);
+        const pad=.05,maxW=W*(1-2*pad),maxH=H*(1-2*pad);
+        const scale=Math.min(maxW/subjectImg.width,maxH/subjectImg.height);
+        const dw=subjectImg.width*scale,dh=subjectImg.height*scale;
+        const dx=(W-dw)/2,dy=(H-dh)/2;
+        ctx.shadowColor='rgba(0,0,0,.15)';
+        ctx.shadowBlur=Math.round(W*.02);
+        ctx.drawImage(subjectImg,dx,dy,dw,dh);
+        ctx.shadowBlur=0;
+      }
+
+      function downloadCanvas(canvas, filename){
+        const dataUrl=canvas.toDataURL('image/png');
+        const isIOS=/iP(hone|ad|od)/.test(navigator.platform)||(navigator.userAgent.includes('Mac') && 'ontouchend' in document);
+        if(isIOS){
+          const w=open(); if(!w) return;
+          w.document.write('<html><head><title>長押しで保存</title></head><body style="margin:0">');
+          w.document.write(`<img src="${dataUrl}" style="width:100%;height:auto;display:block">`);
+          w.document.write('</body></html>'); w.document.close();
+        }else{
+          const a=document.createElement('a');
+          a.href=dataUrl; a.download=filename;
+          root.appendChild(a); a.click(); a.remove();
+        }
+      }
+
+      async function processAndPreview(file){
+        const hexes=currentResultHexes();
+        if(!hexes){ setUpMsg('先に診断を実行して、3色を確定してください。',true); return; }
+        try{
+          setUpMsg('背景を削除中…（ローカル処理）'); prog(3); spinOn();
+
+          const normalized = await normalizeImageFile(file,1024);
+          prog(20);
+
+          const cutBlob = await localQuickMatting(normalized);
+          prog(80);
+
+          const u=URL.createObjectURL(cutBlob);
+          const subject=new Image();
+          await new Promise((res,rej)=>{subject.onload=()=>{URL.revokeObjectURL(u);res()}; subject.onerror=e=>{URL.revokeObjectURL(u);rej(e)}; subject.src=u;});
+          prog(90);
+
+          drawComposite($('#cvMain'),hexes.main,subject);
+          drawComposite($('#cvSub') ,hexes.sub ,subject);
+          drawComposite($('#cvAcc') ,hexes.acc ,subject);
+          prog(100);
+
+          show($('#previewArea'),true);
+          setUpMsg('プレビューを表示しました。各ボタンから保存できます。');
+        }catch(err){
+          console.error(err);
+          setUpMsg('背景除去に失敗しました： '+(err?.message||String(err)).slice(0,300),true);
+        }finally{
+          spinOff(); prog(0);
+          setTimeout(()=>{ upMsg.style.display='none'; },5000);
+        }
+      }
+    }
+  });
+  </script>
+</body>
+</html>
