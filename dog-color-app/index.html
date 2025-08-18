@@ -1,8 +1,8 @@
 <!doctype html>
 <html lang="ja">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>愛犬パーソナルカラー診断</title>
 <style>
   :root{--ink:#222;--muted:#667085;--bg:#f7f7f9;--panel:#fff;--brand:#2d9cdb}
@@ -29,7 +29,7 @@
   .group h3{margin:0 0 6px;font-size:12px;color:var(--muted)}
   .traits-list label{display:flex;align-items:center;gap:6px;padding:3px 4px;border-radius:6px}
   .traits-list label:hover{background:#f6f7f9}
-  .actions{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+  .actions{display:flex;gap:8px;margin-top:10px}
   .btn{border:0;border-radius:999px;padding:9px 14px;font-weight:700;cursor:pointer}
   .primary{background:var(--brand);color:#fff}
   .ghost{background:#f1f3f5;color:#333}
@@ -42,25 +42,19 @@
   .sw .ttl{font-weight:700;font-size:13px}
   .rowsm{display:flex;justify-content:space-between;align-items:center;margin-top:2px}
   .rowsm code{background:#f2f4f7;border-radius:6px;padding:2px 6px}
-  .badge{display:none} /* トーン非表示 */
+  .badge{display:none}
 
-  /* スピナー */
-  .spinner{display:none;gap:8px;align-items:center;font-size:13px;color:#555}
-  .spinner .dot{width:8px;height:8px;border-radius:50%;background:#999;animation:b 0.9s infinite alternate}
-  .spinner .dot:nth-child(2){animation-delay:0.15s}.spinner .dot:nth-child(3){animation-delay:0.3s}
-  @keyframes b{to{opacity:0.2;transform:translateY(-2px)}}
-
-  /* === Mobile === */
   @media (max-width: 640px) {
     .app { grid-template-columns: 1fr; padding: 10px; }
     .coat-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
     .coat .chip { height: 56px; }
     .coat .meta { font-size: 12px; padding: 5px 7px; }
-    .coat .meta small { display:none; } /* HEX隠して1行保持 */
+    .coat .meta small { display:none; }
     .traits { grid-template-columns: 1fr; gap: 10px; }
     .traits-list label { padding: 8px 10px; }
     .traits-list input[type="checkbox"] { transform: scale(1.25); }
-    .btn { width: auto; padding: 12px 14px; font-size: 15px; }
+    .actions { flex-direction: column; gap: 10px; }
+    .btn { width: 100%; padding: 14px 16px; font-size: 16px; }
     .swatches { grid-template-columns: 1fr; gap: 12px; }
     .sw .chip { height: 84px; }
     .sw .meta { padding: 10px 12px; }
@@ -68,13 +62,17 @@
     body { font-size: 16px; }
   }
   .coat, .btn, .traits-list label { min-height: 44px; }
+
+  /* 簡易スピナー */
+  .spinner{display:inline-block;width:1em;height:1em;border:2px solid #ccc;border-top-color:#2d9cdb;border-radius:50%;animation:sp 0.8s linear infinite;vertical-align:-2px;margin-right:8px}
+  @keyframes sp{to{transform:rotate(360deg)}}
 </style>
 </head>
 <body>
 <header>
   <h1>愛犬パーソナルカラー診断</h1>
   <div class="subtitle">
-    合計27,000通りの毛色×性格の組み合わせから、<br>
+    合計27,000通りの毛色×性格の組み合わせから、<br />
     愛犬に似合う3色を診断します
   </div>
 </header>
@@ -97,17 +95,17 @@
     <div class="actions">
       <button class="btn primary" id="run">診断する</button>
       <button class="btn ghost" id="reset">リセット</button>
-      <div id="msg" class="err"></div>
-      <div id="note" class="note">性格は1〜3つまで選択してください。</div>
     </div>
+    <div id="msg" class="err"></div>
+    <div id="note" class="note">性格は1〜3つまで選択してください。</div>
   </section>
 
   <!-- 右：結果 -->
   <section class="card">
     <h2>愛犬パーソナルカラー診断結果</h2>
     <p class="hint">
-      メイン：主に愛犬の毛の色から似合う色を診断<br>
-      サブ：愛犬の性格を加味した上で診断<br>
+      メイン：主に愛犬の毛の色から似合う色を診断<br />
+      サブ：愛犬の性格を加味した上で診断<br />
       アクセント：毛の色とのコントラストにより、目立つ色を診断
     </p>
     <div class="swatches">
@@ -144,10 +142,6 @@
   </p>
 
   <input id="upload" type="file" accept="image/png,image/jpeg,image/webp" />
-  <div class="spinner" id="spin">
-    <div class="dot"></div><div class="dot"></div><div class="dot"></div>
-    <span>背景を削除中…</span>
-  </div>
   <div id="upMsg" class="note" style="margin-top:8px;display:none;"></div>
 
   <div id="previewArea" style="display:none; margin-top:12px;">
@@ -157,19 +151,16 @@
       <canvas id="cvAcc"  width="900" height="900" style="max-width:100%;border:1px solid #eee;border-radius:8px;"></canvas>
     </div>
     <div class="actions" style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
-      <button class="btn" id="dlMain">メイン色背景をダウンロード</button>
-      <button class="btn" id="dlSub" >サブ色背景をダウンロード</button>
-      <button class="btn" id="dlAcc" >アクセント色背景をダウンロード</button>
-      <button class="btn" id="btnShare">SNSでシェア</button>
-      <button class="btn ghost" id="btnClaim" disabled>シェア完了！1クレジット受け取る</button>
-      <span id="creditInfo" style="font-size:12px;color:#667085;"></span>
+      <button class="btn" id="dlMain" style="padding:10px 14px; border-radius:8px; border:1px solid #ddd;">メイン色背景をダウンロード</button>
+      <button class="btn" id="dlSub"  style="padding:10px 14px; border-radius:8px; border:1px solid #ddd;">サブ色背景をダウンロード</button>
+      <button class="btn" id="dlAcc"  style="padding:10px 14px; border-radius:8px; border:1px solid #ddd;">アクセント色背景をダウンロード</button>
     </div>
   </div>
 </section>
 
-<!-- ここからJS（UI＋診断ロジック＋写真＆シェア） -->
+<!-- ====== 診断ロジック（色データなど） ====== -->
 <script>
-/* ===== 70色パレット ===== */
+/* 70色パレット */
 const PALETTE=[
   {hex:"#F5F5DC",cat:"ベージュ",tone:"ライト",name:"ベージュVL"},
   {hex:"#E4CDA7",cat:"ベージュ",tone:"ライト",name:"ベージュL"},
@@ -243,7 +234,7 @@ const PALETTE=[
   {hex:"#000000",cat:"グレー",tone:"ダーク",name:"ブラック"}
 ];
 
-/* ===== 毛色20（色見本付き） ===== */
+/* 毛色20 */
 const COATS=[
   ["ホワイト","#FFFFFF"],["クリーム","#FFFDD0"],["フォーン","#C3A276"],["タン","#C49A6C"],["セーブル","#7B5B3E"],["アプリコット","#E6A571"],
   ["イエロー","#FFD54F"],["ゴールド","#FFD700"],["レッド","#C04000"],["マホガニー","#722F37"],
@@ -251,14 +242,14 @@ const COATS=[
   ["ライトブラウン","#B6864D"],["ブラウン","#8B5A2B"],["ブリンドル","#5A4636"],["ダークチョコレート","#3A2C2A"],["ブラック","#000000"]
 ];
 
-/* ===== 性格リスト ===== */
+/* 性格 */
 const TRAITS={
   intro:["繊細","慎重","警戒心が強い","寂しがり屋","おだやか","マイペース","独立心が強い","頑固"],
   neutral:["賢い","集中力が高い","クール","素直","好奇心旺盛","甘えん坊","順応性が高い"],
   extro:["勇敢","活発","お調子者","リーダー気質","社交的"]
 };
 
-/* ===== 色ユーティリティ ===== */
+/* 色ユーティリティ */
 const hexToRgb=h=>{const m=h.replace('#','');return{r:parseInt(m.slice(0,2),16),g:parseInt(m.slice(2,4),16),b:parseInt(m.slice(4,6),16)}};
 const rgbToHue=({r,g,b})=>{r/=255;g/=255;b/=255;const mx=Math.max(r,g,b),mn=Math.min(r,g,b),d=mx-mn;if(d===0)return 0;let h=mx===r?(g-b)/d:mx===g?(b-r)/d+2:(r-g)/d+4;return (h*60+360)%360};
 const hueOf=hex=>rgbToHue(hexToRgb(hex));
@@ -268,7 +259,7 @@ function xyzToLab(x,y,z){const xr=x/95.047,yr=y/100,zr=z/108.883;const f=t=>t>0.
 const hexToLab=hex=>{const {r,g,b}=hexToRgb(hex);const {x,y,z}=rgbToXyz(r,g,b);return xyzToLab(x,y,z)};
 function labChroma(hex){const L=hexToLab(hex);return Math.hypot(L.a,L.b);}
 
-/* ===== 性格 → センチメント ===== */
+/* 性格→センチメント */
 const traitGroup={}; 
 TRAITS.intro.forEach(t=>traitGroup[t]="内向");
 TRAITS.neutral.forEach(t=>traitGroup[t]="中立");
@@ -291,11 +282,11 @@ function hueBiasScore(colorHue, prefHues){
   return best;
 }
 
-/* ===== シード乱数 ===== */
+/* RNG */
 function seedFrom(str){let h=2166136261>>>0;for(let i=0;i<str.length;i++){h^=str.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0}
 function rng(seed){let s=seed>>>0;return ()=>{s=(s*1664525+1013904223)>>>0;return (s&0xffff)/0x10000};}
 
-/* ===== 診断ロジック ===== */
+/* 診断ロジック */
 function pickColors(coatName, traits){
   const coatHex = (new Map(COATS)).get(coatName) || "#FFFFFF";
   const coatHue = hueOf(coatHex);
@@ -338,7 +329,7 @@ function pickColors(coatName, traits){
 
     const wiggle = 0.96 + 0.08*r();
 
-    return {c, H, L, mainScore, subBase: subBase, accentRaw: accentBase*grayFactor*wiggle};
+    return {c, H, L, mainScore, subBase, accentRaw: accentBase*grayFactor*wiggle};
   });
 
   // MAIN
@@ -346,7 +337,7 @@ function pickColors(coatName, traits){
   const mTop=mainList[0].mainScore, mNear=mainList.filter(x=>x.mainScore>=mTop*0.98);
   const main=(mNear[Math.floor(r()*mNear.length)]||mainList[0]).c;
 
-  // SUB（メインと近似しすぎを少し避ける）
+  // SUB
   const mainHue=hueOf(main.hex), mainL=hexToLab(main.hex).L;
   const subList=scored.filter(x=>x.c.hex!==main.hex).map(x=>{
       const huePenalty = Math.exp(-(hueDist(x.H, mainHue)**2)/(2*20*20));
@@ -357,7 +348,7 @@ function pickColors(coatName, traits){
   const sTop=subList[0].score, sNear=subList.filter(s=>s.score>=sTop*0.97);
   const sub=(sNear[Math.floor(r()*sNear.length)]||subList[0]).x.c;
 
-  // ACCENT（メイン・サブと同系統をやや抑制、青/グレー偏り緩和）
+  // ACCENT
   const usedCats=new Set([main.cat||main.c?.cat, sub.cat||sub.c?.cat].filter(Boolean));
   const subHue=hueOf(sub.hex);
   const accentList=scored
@@ -378,7 +369,7 @@ function pickColors(coatName, traits){
   return {main, sub, accent};
 }
 
-/* ===== UI描画 ===== */
+/* UI描画 */
 const coatGrid=document.getElementById("coatGrid");
 let selectedCoat=null;
 function renderCoats(){
@@ -398,7 +389,7 @@ function renderCoats(){
 }
 renderCoats();
 
-/* 性格リスト描画＋制限（1〜3つ） */
+/* 性格リスト */
 function addTraitList(containerId, list){
   const el=document.getElementById(containerId);
   list.forEach(t=>{
@@ -433,7 +424,7 @@ function setSw(prefix, color){
   document.getElementById(prefix+"Tone").textContent=color.tone;
 }
 
-/* 診断実行：毛色必須・性格1〜3つ必須 */
+/* 診断実行 */
 function run(){
   const msg=document.getElementById("msg");
   const traits=selectedTraits();
@@ -464,80 +455,11 @@ document.getElementById("reset").addEventListener("click", ()=>{
   });
   const msg=document.getElementById("msg"); msg.style.display="none";
 });
+</script>
 
-/* ===== whoami → userId Cookie 発行＆クレジット状態の初期化 ===== */
-(async function ensureUser(){
-  try{ await fetch('/api/whoami'); }catch{}
-  try{
-    const r=await fetch('/api/credit-state');
-    if(r.ok){
-      const j=await r.json();
-      const btnClaim=document.getElementById('btnClaim');
-      const info=document.getElementById('creditInfo');
-      if(j.shareBonusClaimed){
-        if(btnClaim){btnClaim.disabled=true;btnClaim.textContent='シェア特典は受け取り済み';}
-      }
-      if(info) info.textContent = `現在のクレジット：${j.credits}`;
-    }
-  }catch{}
-})();
-
-/* ===== 写真処理ユーティリティ ===== */
-function setUpMsg(text,isErr=false){
-  const el=document.getElementById('upMsg');
-  el.style.display='block';
-  el.style.color=isErr?'#b00020':'#b26b00';
-  el.textContent=text;
-}
-function showSpin(v){ document.getElementById('spin').style.display = v?'flex':'none'; }
-
-/* JSON(base64)で背景除去APIを呼ぶ */
-async function removeBgByJson(file){
-  const buf=await file.arrayBuffer();
-  const b64=btoa(String.fromCharCode(...new Uint8Array(buf)));
-  const r=await fetch('/api/remove-bg',{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({ filename:file.name||'image.jpg', mime:file.type||'image/jpeg', data:b64 })
-  });
-  if(!r.ok){ const t=await r.text().catch(()=> ''); throw new Error(`HTTP ${r.status}: ${t.slice(0,200)}`); }
-  return await r.blob(); // PNG
-}
-function loadImageFromBlob(blob){
-  return new Promise((resolve,reject)=>{
-    const url=URL.createObjectURL(blob);
-    const im=new Image();
-    im.onload=()=>{URL.revokeObjectURL(url);resolve(im)};
-    im.onerror=e=>{URL.revokeObjectURL(url);reject(e)};
-    im.src=url;
-  });
-}
-function drawComposite(canvas,bgHex,subjectImg){
-  const ctx=canvas.getContext('2d');
-  const W=canvas.width,H=canvas.height;
-  ctx.clearRect(0,0,W,H);
-  ctx.fillStyle=bgHex; ctx.fillRect(0,0,W,H);
-  const pad=.05,maxW=W*(1-2*pad),maxH=H*(1-2*pad);
-  const sc=Math.min(maxW/subjectImg.width,maxH/subjectImg.height);
-  const dw=subjectImg.width*sc, dh=subjectImg.height*sc;
-  const dx=(W-dw)/2, dy=(H-dh)/2;
-  ctx.shadowColor='rgba(0,0,0,.15)'; ctx.shadowBlur=Math.round(W*.02);
-  ctx.drawImage(subjectImg,dx,dy,dw,dh); ctx.shadowBlur=0;
-}
-function downloadCanvas(canvas, filename){
-  const dataUrl=canvas.toDataURL('image/png');
-  const isIOS=/iP(hone|ad|od)/.test(navigator.platform)||(navigator.userAgent.includes('Mac') && 'ontouchend' in document);
-  if(isIOS){
-    const w=window.open(); if(!w) return;
-    w.document.write('<html><head><title>長押しで保存</title></head><body style="margin:0">');
-    w.document.write(`<img src="${dataUrl}" style="width:100%;height:auto;display:block">`);
-    w.document.write('</body></html>'); w.document.close();
-  }else{
-    const a=document.createElement('a'); a.href=dataUrl; a.download=filename; document.body.appendChild(a); a.click(); a.remove();
-  }
-}
-
-/* ===== 現在の診断HEXを取得 ===== */
+<!-- ====== 写真モジュール（アップロード処理） ====== -->
+<script>
+/* 現在の診断HEX */
 function currentResultHexes(){
   const m=document.getElementById('mainHex')?.textContent.trim();
   const s=document.getElementById('subHex')?.textContent.trim();
@@ -545,8 +467,82 @@ function currentResultHexes(){
   if(!m||m==='—'||!s||s==='—'||!a||a==='—') return null;
   return {main:m,sub:s,acc:a};
 }
+function setUpMsg(text,isErr=false){
+  const el=document.getElementById('upMsg');
+  el.style.display='block';
+  el.style.color=isErr?'#b00020':'#b26b00';
+  el.innerHTML=text;
+}
 
-/* ===== 入口：アップロード処理 ===== */
+/* --- 重要：FileReader で安全に Base64 化して JSON 送信 --- */
+async function removeBgByJson(file){
+  const dataUrl = await new Promise((resolve,reject)=>{
+    const fr=new FileReader();
+    fr.onload = ()=>resolve(fr.result);
+    fr.onerror= reject;
+    fr.readAsDataURL(file);
+  });
+  const base64 = String(dataUrl).split(',')[1] || '';
+
+  const r = await fetch('/api/remove-bg', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({
+      filename: file.name || 'image.jpg',
+      mime: file.type || 'image/jpeg',
+      data: base64
+    })
+  });
+  if(!r.ok){
+    const t = await r.text().catch(()=> '');
+    throw new Error(`HTTP ${r.status}: ${t.slice(0,200)}`);
+  }
+  return await r.blob(); // PNG
+}
+
+/* 画像読み込み（Blob→Image） */
+function loadImageFromBlob(blob){
+  return new Promise((resolve,reject)=>{
+    const url=URL.createObjectURL(blob);
+    const im=new Image();
+    im.onload=()=>{URL.revokeObjectURL(url); resolve(im);};
+    im.onerror=e=>{URL.revokeObjectURL(url); reject(e);};
+    im.src=url;
+  });
+}
+
+/* 合成（単色背景＋中央フィット） */
+function drawComposite(canvas,bgHex,subjectImg){
+  const ctx=canvas.getContext('2d');
+  const W=canvas.width,H=canvas.height;
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle=bgHex; ctx.fillRect(0,0,W,H);
+  const pad=.05,maxW=W*(1-2*pad),maxH=H*(1-2*pad);
+  const scale=Math.min(maxW/subjectImg.width,maxH/subjectImg.height);
+  const dw=subjectImg.width*scale,dh=subjectImg.height*scale;
+  const dx=(W-dw)/2,dy=(H-dh)/2;
+  ctx.shadowColor='rgba(0,0,0,.15)'; ctx.shadowBlur=Math.round(W*.02);
+  ctx.drawImage(subjectImg,dx,dy,dw,dh); ctx.shadowBlur=0;
+}
+
+/* ダウンロード */
+function downloadCanvas(canvas, filename){
+  const dataUrl=canvas.toDataURL('image/png');
+  const isIOS=/iP(hone|ad|od)/.test(navigator.platform)||
+              (navigator.userAgent.includes('Mac') && 'ontouchend' in document);
+  if(isIOS){
+    const w=window.open(); if(!w) return;
+    w.document.write('<html><head><title>長押しで保存</title></head><body style="margin:0">');
+    w.document.write(`<img src="${dataUrl}" style="width:100%;height:auto;display:block">`);
+    w.document.write('</body></html>');
+    w.document.close();
+  }else{
+    const a=document.createElement('a');
+    a.href=dataUrl; a.download=filename; document.body.appendChild(a); a.click(); a.remove();
+  }
+}
+
+/* 入口：アップロード */
 const uploadEl=document.getElementById('upload');
 if(uploadEl){
   uploadEl.addEventListener('change', async (e)=>{
@@ -556,12 +552,14 @@ if(uploadEl){
     if(!hexes){ setUpMsg('先に診断を実行して、3色を確定してください。',true); return; }
 
     if(!/^image\/(png|jpeg|jpg|webp)$/i.test(file.type)){
-      setUpMsg('PNG/JPG/WebP の画像を選んでください（HEICは変換が必要）',true); return;
+      setUpMsg('PNG/JPG/WebP の画像を選んでください（HEICは事前にJPGへ変換）',true); return;
     }
-    if(file.size>4*1024*1024){ setUpMsg('画像が大きすぎます（4MB以下推奨）',true); return; }
+    if(file.size>4*1024*1024){
+      setUpMsg('画像が大きすぎます（4MB以下推奨）',true); return;
+    }
 
     try{
-      setUpMsg('背景を削除中…'); showSpin(true);
+      setUpMsg('<span class="spinner"></span>背景を削除中…（数秒かかります）');
       const cutBlob=await removeBgByJson(file);
       const subject=await loadImageFromBlob(cutBlob);
 
@@ -573,62 +571,15 @@ if(uploadEl){
       setUpMsg('プレビューを表示しました。各ボタンから保存できます。');
     }catch(err){
       console.error(err);
-      setUpMsg('背景除去に失敗しました： '+String(err).slice(0,300),true);
-    }finally{
-      showSpin(false);
+      setUpMsg('背景除去に失敗しました： '+String(err).slice(0,500),true);
     }
   });
 }
 
-/* ===== 単品ダウンロード ===== */
+/* 単品ダウンロード */
 document.getElementById('dlMain')?.addEventListener('click',()=>downloadCanvas(document.getElementById('cvMain'),'main.png'));
 document.getElementById('dlSub') ?.addEventListener('click',()=>downloadCanvas(document.getElementById('cvSub') ,'sub.png'));
 document.getElementById('dlAcc') ?.addEventListener('click',()=>downloadCanvas(document.getElementById('cvAcc') ,'accent.png'));
-
-/* ===== シェア → 自己申告で特典（生涯1回） ===== */
-const btnShare  = document.getElementById('btnShare');
-const btnClaim  = document.getElementById('btnClaim');
-const creditInfo= document.getElementById('creditInfo');
-
-btnShare?.addEventListener('click', async ()=>{
-  const text='愛犬パーソナルカラー診断の結果！ #愛犬カラー診断 @aha_tokyo';
-  try{
-    if(navigator.share){
-      await navigator.share({ title:'愛犬パーソナルカラー診断', text, url: location.origin });
-      btnClaim.disabled=false;
-      btnClaim.textContent='シェア完了！1クレジット受け取る';
-    }else{
-      alert('お使いのブラウザはWeb Shareに対応していません。SNSで手動投稿後、「シェア完了」ボタンを押してください。');
-      btnClaim.disabled=false;
-    }
-  }catch(e){ /* キャンセル時などは無視 */ }
-});
-
-btnClaim?.addEventListener('click', async ()=>{
-  btnClaim.disabled = true;
-  btnClaim.textContent = '付与中…';
-  try {
-    const r = await fetch('/api/claim-share-credit', { method: 'POST' });
-    const j = await r.json();
-    if (r.status === 409) {
-      alert(j.message || 'この特典はお一人様1回までです。');
-      btnClaim.textContent = 'シェア特典は受け取り済み';
-      return;
-    }
-    if (j.ok) {
-      creditInfo.textContent = `🎉 クレジットを1追加しました（残：${j.credits}）`;
-      btnClaim.textContent = '付与済み';
-      return;
-    }
-    alert(j.message || '付与に失敗しました。時間をおいて再試行してください。');
-    btnClaim.textContent = 'シェア完了！1クレジット受け取る';
-    btnClaim.disabled = false;
-  } catch (e) {
-    alert('通信エラーが発生しました。');
-    btnClaim.textContent = 'シェア完了！1クレジット受け取る';
-    btnClaim.disabled = false;
-  }
-});
 </script>
 </body>
 </html>
